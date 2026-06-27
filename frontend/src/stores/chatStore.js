@@ -11,7 +11,7 @@ export const useChatStore = create(
       pendingToolCalls: [],
 
       addMessage: (message) => set((state) => ({
-        messages: [...state.messages, { ...message, id: crypto.randomUUID(), timestamp: Date.now() }]
+        messages: [...state.messages, { ...message, id: message.id || crypto.randomUUID(), timestamp: Date.now() }]
       })),
 
       updateMessage: (id, updates) => set((state) => ({

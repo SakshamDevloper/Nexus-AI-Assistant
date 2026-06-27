@@ -83,18 +83,25 @@ Be concise but thorough. Format code blocks with language tags.`,
       let maxIterations = 3
       let iteration = 0
 
+      let fullContent = ''
+      let toolCallsMadeOverall = false
+
       while (iteration < maxIterations) {
         let toolCallsMade = false
+        let iterationContent = ''
 
         await streamResponse(
           model,
           currentMessages,
           toolDefinitions,
           (token) => {
+            iterationContent += token
+            fullContent += token
             socket.emit('token', { messageId, content: token })
           },
           async (callId, name, args) => {
             toolCallsMade = true
+            toolCallsMadeOverall = true
             socket.emit('tool_call', { callId, name, arguments: JSON.stringify(args) })
 
             const result = await executeTool(name, args)
@@ -103,7 +110,7 @@ Be concise but thorough. Format code blocks with language tags.`,
 
             currentMessages.push({
               role: 'assistant',
-              content: null,
+              content: iterationContent || null,
               tool_calls: [{ id: callId, type: 'function', function: { name, arguments: JSON.stringify(args) } }],
             })
 
@@ -115,11 +122,15 @@ Be concise but thorough. Format code blocks with language tags.`,
           }
         )
 
+        if (iterationContent && !toolCallsMade) {
+          currentMessages.push({ role: 'assistant', content: iterationContent })
+        }
+
         if (!toolCallsMade) break
         iteration++
       }
 
-      socket.emit('message_complete', { messageId })
+      socket.emit('message_complete', { messageId, fullContent, content: fullContent })
     } catch (error) {
       console.error('Chat error:', error)
       socket.emit('error', { message: error.message })

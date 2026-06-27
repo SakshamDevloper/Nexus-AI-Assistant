@@ -9,6 +9,7 @@ export function useAgentStream() {
   const socketRef = useRef(null)
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState(null)
+  const accumRef = useRef({})
 
   const { addMessage, updateMessage, setStreaming, addToolCall, updateToolCall, clearToolCalls } = useChatStore()
   const { selectedModel } = useSettingsStore()
@@ -35,11 +36,17 @@ export function useAgentStream() {
     })
 
     socketRef.current.on('token', (data) => {
-      updateMessage(data.messageId, { content: data.content, streaming: true })
+      if (!accumRef.current[data.messageId]) {
+        accumRef.current[data.messageId] = ''
+      }
+      accumRef.current[data.messageId] += data.content
+      updateMessage(data.messageId, { content: accumRef.current[data.messageId], streaming: true })
     })
 
     socketRef.current.on('message_complete', (data) => {
-      updateMessage(data.messageId, { streaming: false, content: data.fullContent })
+      const finalContent = accumRef.current[data.messageId] || data.fullContent || data.content || ''
+      updateMessage(data.messageId, { streaming: false, content: finalContent })
+      delete accumRef.current[data.messageId]
       setStreaming(false)
     })
 
