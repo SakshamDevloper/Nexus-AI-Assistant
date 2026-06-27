@@ -16,14 +16,101 @@ import { useAgentStream } from '../hooks/useAgentStream'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 
-import SplashCursor from '../components/ReactBits/SplashCursor'
 import Orb from '../components/ReactBits/Orb'
 import GradualBlur from '../components/ReactBits/GradualBlur'
 import MagicRings from '../components/ReactBits/MagicRings'
-import Strands from '../components/ReactBits/Strands'
-import LaserFlow from '../components/ReactBits/LaserFlow'
 import ShinyText from '../components/ReactBits/ShinyText'
 
+/* ---------- Mac Title Bar ---------- */
+function MacTitleBar({ modelSelector }) {
+  return (
+    <div className="relative flex items-center h-[38px] shrink-0 bg-[#1d1e20] border-b border-white/[0.06] select-none z-30">
+      <div className="flex items-center gap-[7px] pl-[18px]">
+        <div className="w-[13px] h-[13px] rounded-full bg-[#FF5F57] shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]" />
+        <div className="w-[13px] h-[13px] rounded-full bg-[#FFBD2E] shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]" />
+        <div className="w-[13px] h-[13px] rounded-full bg-[#28C840] shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]" />
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="url(#n-grad)" />
+            <text x="20" y="27" textAnchor="middle" fill="#050807" fontSize="22" fontWeight="900" fontFamily="system-ui">N</text>
+            <defs>
+              <linearGradient id="n-grad" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stopColor="#5ed29c" />
+                <stop offset="100%" stopColor="#6366f1" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span className="text-xs font-semibold text-white/35 tracking-wide">NexusAI — Terminal</span>
+        </div>
+      </div>
+      <div className="ml-auto flex items-center pr-3">
+        {modelSelector}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- Voice Wave Grid Overlay ---------- */
+function VoiceWaveGrid({ state, accent = '#5ed29c' }) {
+  const active = state === 'listening' || state === 'speaking'
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-[5] pointer-events-none overflow-hidden"
+        style={{ marginTop: '38px' }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: [
+              `linear-gradient(to right, ${accent}18 1px, transparent 1px)`,
+              `linear-gradient(to bottom, ${accent}18 1px, transparent 1px)`,
+            ].join(', '),
+            backgroundSize: '48px 48px',
+            opacity: 0.06,
+          }}
+        />
+      </div>
+
+      {active && (
+        <div
+          className="fixed inset-0 z-[6] pointer-events-none overflow-hidden"
+          style={{ marginTop: '38px' }}
+        >
+          <style>{`
+            @keyframes wavePulse {
+              0%, 100% { opacity: 0.08; transform: scaleY(1); }
+              50% { opacity: 0.45; transform: scaleY(2.2); }
+            }
+          `}</style>
+          <div className="absolute inset-0 flex items-center justify-center">
+            {Array.from({ length: 11 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute left-0 right-0 h-[1px]"
+                style={{
+                  top: `${8 + i * 8}%`,
+                  background: `linear-gradient(90deg, transparent 5%, ${accent}33 20%, ${accent}77 50%, ${accent}33 80%, transparent 95%)`,
+                  animation: `wavePulse ${1.2 + i * 0.15}s ease-in-out infinite`,
+                  animationDelay: `${i * 0.12}s`,
+                  boxShadow: state === 'listening'
+                    ? `0 0 6px ${accent}55, 0 0 20px ${accent}22`
+                    : `0 0 4px ${accent}44`,
+                  filter: 'blur(0.5px)',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+/* ---------- Code Block ---------- */
 function CodeBlock({ language, children }) {
   const [copied, setCopied] = useState(false)
   const handleCopy = () => {
@@ -51,6 +138,7 @@ function CodeBlock({ language, children }) {
   )
 }
 
+/* ---------- Message Bubble ---------- */
 function MessageBubble({ message }) {
   const isUser = message.role === 'user'
   const hasToolCalls = message.toolCalls?.length > 0
@@ -130,6 +218,7 @@ function MessageBubble({ message }) {
   )
 }
 
+/* ---------- Chat Interface ---------- */
 function ChatInterface() {
   const { messages, isStreaming, pendingToolCalls } = useChatStore()
   const bottomRef = useRef(null)
@@ -181,268 +270,7 @@ function ChatInterface() {
   )
 }
 
-export default function Assistant() {
-  const [input, setInput] = useState('')
-  const [memoryOpen, setMemoryOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [authOpen, setAuthOpen] = useState(false)
-  const [orbState, setOrbState] = useState('idle')
-  const inputRef = useRef(null)
-
-  const { messages, isStreaming, sessions, loadSession, newSession, saveSession } = useChatStore()
-  const { voiceEnabled, autoSpeak, voiceSpeed, voicePitch } = useSettingsStore()
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-
-  const { isConnected, sendMessage } = useAgentStream()
-  const speechRec = useSpeechRecognition({
-    continuous: false,
-    interimResults: true,
-    language: 'en-US',
-    onResult: (text, isFinal) => {
-      if (isFinal) {
-        setInput(prev => prev + text)
-      }
-    },
-    onStart: () => setOrbState('listening'),
-    onEnd: () => setOrbState(isStreaming ? 'thinking' : 'idle'),
-  })
-
-  const synth = useSpeechSynthesis()
-
-  useEffect(() => {
-    if (isStreaming) setOrbState('thinking')
-    else if (!speechRec.isListening) setOrbState('idle')
-  }, [isStreaming, speechRec.isListening])
-
-  useEffect(() => {
-    if (autoSpeak && messages.length > 0 && !isStreaming) {
-      const lastMsg = messages[messages.length - 1]
-      if (lastMsg.role === 'assistant' && lastMsg.content && !lastMsg.spoken) {
-        setOrbState('speaking')
-        synth.speak(lastMsg.content, {
-          rate: voiceSpeed,
-          pitch: voicePitch,
-          onEnd: () => {
-            setOrbState('idle')
-            useChatStore.getState().updateMessage(lastMsg.id, { spoken: true })
-          },
-        })
-      }
-    }
-  }, [messages, isStreaming, autoSpeak, voiceSpeed, voicePitch])
-
-  const handleSend = () => {
-    if (!input.trim() || isStreaming) return
-    saveSession()
-    sendMessage(input.trim())
-    setInput('')
-    inputRef.current?.focus()
-  }
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
-
-  const handleMicToggle = () => {
-    if (speechRec.isListening) speechRec.stop()
-    else speechRec.start()
-  }
-
-  return (
-    <div className="h-screen flex bg-bg-deep text-white relative overflow-hidden">
-      {/* Background: Strands */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
-        <Strands
-          speed={0.4}
-          amplitude={0.5}
-          waviness={0.7}
-          thickness={0.25}
-          glow={0.4}
-          intensity={0.2}
-          className="w-full h-full"
-        />
-      </div>
-
-      {/* Secondary background: LaserFlow subtle */}
-      <div className="fixed inset-0 z-[1] pointer-events-none opacity-20">
-        <LaserFlow
-          wispDensity={0.3}
-          flowSpeed={0.15}
-          fogIntensity={0.1}
-          color="#5ed29c"
-          className="w-full h-full"
-        />
-      </div>
-
-      {/* Splash cursor overlay */}
-      <div className="fixed inset-0 z-[2] pointer-events-none">
-        <SplashCursor
-          TRANSPARENT={true}
-          DENSITY_DISSIPATION={4}
-          VELOCITY_DISSIPATION={3}
-          SPLAT_FORCE={5000}
-          COLOR_UPDATE_SPEED={6}
-          BACK_COLOR={{ r: 0, g: 0, b: 0 }}
-          RAINBOW_MODE={false}
-          COLOR="#5ed29c"
-        />
-      </div>
-
-      {/* Large decorative Orb */}
-      <div className="fixed -right-40 top-1/3 w-[500px] h-[500px] opacity-25 pointer-events-none z-[3]">
-        <Orb
-          hue={140}
-          hoverIntensity={0.15}
-          rotateOnHover={false}
-          backgroundColor="#070b0a"
-        />
-      </div>
-
-      {/* Magic Rings decorative */}
-      <div className="fixed left-[-15%] bottom-[-10%] w-[500px] h-[500px] opacity-15 pointer-events-none z-[3]">
-        <MagicRings
-          ringCount={8}
-          baseRadius={0.35}
-          radiusStep={0.14}
-          lineThickness={0.02}
-          color="#5ed29c"
-          colorTwo="#6366f1"
-          opacity={0.4}
-          rotation={0.25}
-        />
-      </div>
-
-      {/* Sidebar overlay for mobile */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[#0a0f0e]/95 backdrop-blur-xl p-4 border-r border-white/10">
-            <SidebarContent
-              sessions={sessions}
-              onSelect={(id) => { loadSession(id); setSidebarOpen(false) }}
-              onNew={() => { newSession(); setSidebarOpen(false) }}
-              onMemory={() => { setMemoryOpen(true); setSidebarOpen(false) }}
-              onAuth={() => { setAuthOpen(true); setSidebarOpen(false) }}
-              user={user}
-              onLogout={logout}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Sidebar Desktop */}
-      <div className="hidden md:flex w-72 flex-col bg-[#0a0f0e]/80 backdrop-blur-xl border-r border-white/10 relative z-20">
-        <SidebarContent
-          sessions={sessions}
-          onSelect={loadSession}
-          onNew={newSession}
-          onMemory={() => setMemoryOpen(true)}
-          onAuth={() => setAuthOpen(true)}
-          user={user}
-          onLogout={logout}
-        />
-      </div>
-
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-20">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-[#0a0f0e]/60 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <button className="md:hidden text-white/40 hover:text-white/70 transition-colors" onClick={() => setSidebarOpen(true)}>
-              <Bars size={20} />
-            </button>
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center shadow-lg shadow-accent/20">
-                <span className="text-xs font-bold text-bg-deep">N</span>
-              </div>
-              <h1 className="text-sm font-semibold text-white/70">NexusAI</h1>
-            </div>
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-accent shadow-sm shadow-accent/50 animate-pulse' : 'bg-red-400'}`} />
-          </div>
-          <div className="flex items-center gap-2">
-            <ModelSelector />
-            <ToolBar />
-          </div>
-        </div>
-
-        {/* Chat Messages */}
-        <div className="flex-1 relative z-10">
-          <ChatInterface />
-          <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10">
-            <GradualBlur position="bottom" height="4rem" strength={1} opacity={0.8} divCount={5} />
-          </div>
-        </div>
-
-        {/* Input Area */}
-        <div className="px-4 pb-4 pt-3 border-t border-white/10 relative z-30 bg-[#0a0f0e]/80 backdrop-blur-xl">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-end gap-2 bg-white/5 rounded-2xl border border-white/10 p-2 focus-within:border-accent/30 focus-within:ring-1 focus-within:ring-accent/10 transition-all">
-              <div className="flex-1 relative">
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type a message or click the mic..."
-                  rows={1}
-                  className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder-white/20 resize-none focus:outline-none"
-                  style={{ maxHeight: '120px' }}
-                  onInput={(e) => {
-                    e.target.style.height = 'auto'
-                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
-                  }}
-                />
-              </div>
-
-              <button
-                onClick={handleMicToggle}
-                className={`p-2.5 rounded-xl transition-all ${
-                  speechRec.isListening
-                    ? 'bg-accent text-bg-deep shadow-lg shadow-accent/25'
-                    : 'text-white/40 hover:bg-white/10 hover:text-white/70'
-                }`}
-              >
-                {speechRec.isListening ? <MicrophoneSlash size={18} /> : <Microphone size={18} />}
-              </button>
-
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || isStreaming}
-                className="p-2.5 rounded-xl bg-accent text-bg-deep hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20"
-              >
-                <PaperPlane size={18} />
-              </button>
-            </div>
-
-            {speechRec.interimTranscript && (
-              <p className="text-xs text-white/20 mt-2 italic text-center">{speechRec.interimTranscript}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Voice Orb Overlay */}
-      {(speechRec.isListening || orbState === 'speaking') && (
-        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50">
-          <div className="relative">
-            <div className="absolute inset-[-50px] opacity-30 pointer-events-none">
-              <Orb hue={orbState === 'listening' ? 180 : 140} hoverIntensity={0.1} rotateOnHover={false} backgroundColor="#070b0a" />
-            </div>
-            <VoiceOrb state={orbState} />
-          </div>
-        </div>
-      )}
-
-      {memoryOpen && <MemoryPanel onClose={() => setMemoryOpen(false)} />}
-      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
-    </div>
-  )
-}
-
+/* ---------- Sidebar Content ---------- */
 function SidebarContent({ sessions, onSelect, onNew, onMemory, onAuth, user, onLogout }) {
   return (
     <>
@@ -515,5 +343,238 @@ function SidebarContent({ sessions, onSelect, onNew, onMemory, onAuth, user, onL
         </div>
       </div>
     </>
+  )
+}
+
+/* ---------- Main Export ---------- */
+export default function Assistant() {
+  const [input, setInput] = useState('')
+  const [memoryOpen, setMemoryOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [orbState, setOrbState] = useState('idle')
+  const inputRef = useRef(null)
+
+  const { messages, isStreaming, sessions, loadSession, newSession, saveSession } = useChatStore()
+  const { voiceEnabled, autoSpeak, voiceSpeed, voicePitch } = useSettingsStore()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const { isConnected, sendMessage } = useAgentStream()
+  const speechRec = useSpeechRecognition({
+    continuous: false,
+    interimResults: true,
+    language: 'en-US',
+    onResult: (text, isFinal) => {
+      if (isFinal) {
+        setInput(prev => prev + text)
+      }
+    },
+    onStart: () => setOrbState('listening'),
+    onEnd: () => setOrbState(isStreaming ? 'thinking' : 'idle'),
+  })
+
+  const synth = useSpeechSynthesis()
+
+  useEffect(() => {
+    if (isStreaming) setOrbState('thinking')
+    else if (!speechRec.isListening) setOrbState('idle')
+  }, [isStreaming, speechRec.isListening])
+
+  useEffect(() => {
+    if (autoSpeak && messages.length > 0 && !isStreaming) {
+      const lastMsg = messages[messages.length - 1]
+      if (lastMsg.role === 'assistant' && lastMsg.content && !lastMsg.spoken) {
+        setOrbState('speaking')
+        synth.speak(lastMsg.content, {
+          rate: voiceSpeed,
+          pitch: voicePitch,
+          onEnd: () => {
+            setOrbState('idle')
+            useChatStore.getState().updateMessage(lastMsg.id, { spoken: true })
+          },
+        })
+      }
+    }
+  }, [messages, isStreaming, autoSpeak, voiceSpeed, voicePitch])
+
+  const handleSend = () => {
+    if (!input.trim() || isStreaming) return
+    saveSession()
+    sendMessage(input.trim())
+    setInput('')
+    inputRef.current?.focus()
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  const handleMicToggle = () => {
+    if (speechRec.isListening) speechRec.stop()
+    else speechRec.start()
+  }
+
+  const showOrbOverlay = speechRec.isListening || orbState === 'speaking'
+
+  return (
+    <div className="h-screen flex flex-col bg-bg-deep text-white relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="fixed -right-40 top-1/3 w-[500px] h-[500px] opacity-20 pointer-events-none z-0">
+        <Orb
+          hue={140}
+          hoverIntensity={0.15}
+          rotateOnHover={false}
+          backgroundColor="#070b0a"
+        />
+      </div>
+      <div className="fixed left-[-15%] bottom-[-10%] w-[500px] h-[500px] opacity-10 pointer-events-none z-0">
+        <MagicRings
+          ringCount={8}
+          baseRadius={0.35}
+          radiusStep={0.14}
+          lineThickness={0.02}
+          color="#5ed29c"
+          colorTwo="#6366f1"
+          opacity={0.4}
+          rotation={0.25}
+        />
+      </div>
+
+      {/* Voice Wave Grid */}
+      <VoiceWaveGrid state={orbState} />
+
+      {/* Mac Title Bar */}
+      <MacTitleBar
+        modelSelector={<ModelSelector />}
+      />
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" style={{ marginTop: '38px' }}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[#0a0f0e]/95 backdrop-blur-xl p-4 border-r border-white/10">
+            <SidebarContent
+              sessions={sessions}
+              onSelect={(id) => { loadSession(id); setSidebarOpen(false) }}
+              onNew={() => { newSession(); setSidebarOpen(false) }}
+              onMemory={() => { setMemoryOpen(true); setSidebarOpen(false) }}
+              onAuth={() => { setAuthOpen(true); setSidebarOpen(false) }}
+              user={user}
+              onLogout={logout}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Main layout: sidebar + chat */}
+      <div className="flex-1 flex min-h-0 relative z-10">
+        {/* Sidebar desktop */}
+        <div className="hidden md:flex w-72 flex-col bg-[#0a0f0e]/80 backdrop-blur-xl border-r border-white/10 relative z-20">
+          <SidebarContent
+            sessions={sessions}
+            onSelect={loadSession}
+            onNew={newSession}
+            onMemory={() => setMemoryOpen(true)}
+            onAuth={() => setAuthOpen(true)}
+            user={user}
+            onLogout={logout}
+          />
+        </div>
+
+        {/* Main chat area */}
+        <div className="flex-1 flex flex-col min-w-0 relative z-20">
+          {/* Inner toolbar */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-[#0a0f0e]/40">
+            <div className="flex items-center gap-2">
+              <button
+                className="md:hidden text-white/40 hover:text-white/70 transition-colors"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Bars size={18} />
+              </button>
+              <div className={`w-[7px] h-[7px] rounded-full ${isConnected ? 'bg-accent shadow-sm shadow-accent/40 animate-pulse' : 'bg-red-400'}`} />
+              <span className="text-[11px] text-white/25 font-mono ml-1">
+                {isConnected ? 'connected' : 'disconnected'}
+              </span>
+            </div>
+            <ToolBar />
+          </div>
+
+          {/* Chat messages */}
+          <div className="flex-1 relative">
+            <ChatInterface />
+            <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10">
+              <GradualBlur position="bottom" height="4rem" strength={1} opacity={0.8} divCount={5} />
+            </div>
+          </div>
+
+          {/* Input area */}
+          <div className="px-4 pb-4 pt-3 border-t border-white/10 relative z-30 bg-[#0a0f0e]/80 backdrop-blur-xl">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-end gap-2 bg-white/5 rounded-2xl border border-white/10 p-2 focus-within:border-accent/30 focus-within:ring-1 focus-within:ring-accent/10 transition-all">
+                <div className="flex-1 relative">
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type a message or click the mic..."
+                    rows={1}
+                    className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder-white/20 resize-none focus:outline-none"
+                    style={{ maxHeight: '120px' }}
+                    onInput={(e) => {
+                      e.target.style.height = 'auto'
+                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+                    }}
+                  />
+                </div>
+
+                <button
+                  onClick={handleMicToggle}
+                  className={`p-2.5 rounded-xl transition-all ${
+                    speechRec.isListening
+                      ? 'bg-accent text-bg-deep shadow-lg shadow-accent/25'
+                      : 'text-white/40 hover:bg-white/10 hover:text-white/70'
+                  }`}
+                >
+                  {speechRec.isListening ? <MicrophoneSlash size={18} /> : <Microphone size={18} />}
+                </button>
+
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || isStreaming}
+                  className="p-2.5 rounded-xl bg-accent text-bg-deep hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20"
+                >
+                  <PaperPlane size={18} />
+                </button>
+              </div>
+
+              {speechRec.interimTranscript && (
+                <p className="text-xs text-white/20 mt-2 italic text-center">{speechRec.interimTranscript}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Voice Orb overlay */}
+      {showOrbOverlay && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50">
+          <div className="relative">
+            <div className="absolute inset-[-50px] opacity-30 pointer-events-none">
+              <Orb hue={orbState === 'listening' ? 180 : 140} hoverIntensity={0.1} rotateOnHover={false} backgroundColor="#070b0a" />
+            </div>
+            <VoiceOrb state={orbState} />
+          </div>
+        </div>
+      )}
+
+      {memoryOpen && <MemoryPanel onClose={() => setMemoryOpen(false)} />}
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+    </div>
   )
 }
