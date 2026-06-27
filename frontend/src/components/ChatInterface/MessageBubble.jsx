@@ -1,5 +1,5 @@
 import ReactMarkdown from 'react-markdown'
-import { Copy, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Copy, ThumbsUp, ThumbsDown } from '../../icons'
 import { useState, useRef, useEffect } from 'react'
 import highlight from 'highlight.js'
 import 'highlight.js/styles/github-dark.min.css'
@@ -17,11 +17,10 @@ const renderer = {
       highlighted = children
     }
 
-    const codeId = `code-${Math.random().toString(36).slice(2)}`
     const [copied, setCopied] = useState(false)
 
     return (
-      <div className="relative group" data-code-id={codeId}>
+      <div className="relative group">
         <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-deep)] border-b border-white/10">
           <span className="text-xs text-[var(--text-muted)] font-medium">{language}</span>
           <button
@@ -86,7 +85,7 @@ export default function MessageBubble({ message, isStreaming = false }) {
             <div className="mb-2 space-y-1">
               {toolCalls.map((tc) => (
                 <div key={tc.id} className="flex items-center gap-2 text-xs text-[var(--text-muted)] bg-white/5 px-2 py-1 rounded">
-                  <span className="text-[var(--accent)]">▸</span>
+                  <span className="text-[var(--accent)]">{'>'}</span>
                   <span className="font-mono">{tc.name}</span>
                   <span className="text-[var(--text-muted)]">({JSON.stringify(tc.arguments).slice(0, 50)}...)</span>
                 </div>
@@ -98,7 +97,7 @@ export default function MessageBubble({ message, isStreaming = false }) {
             <details className="mb-2 group">
               <summary className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
                 <span>Tool Results</span>
-                <span className="text-[var(--accent)]">▼</span>
+                <span className="text-[var(--accent)]">v</span>
               </summary>
               <div className="mt-2 p-2 bg-white/5 rounded text-xs font-mono max-h-48 overflow-auto">
                 {toolResults.map((tr, i) => (

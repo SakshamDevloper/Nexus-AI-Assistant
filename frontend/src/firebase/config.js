@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider } from 'firebase/auth'
+import { initializeApp, getApps } from 'firebase/app'
+import { getAuth, GoogleAuthProvider, connectAuthEmulator } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -10,7 +10,21 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 }
 
-const app = initializeApp(firebaseConfig)
-export const auth = getAuth(app)
-export const googleProvider = new GoogleAuthProvider()
+const hasFirebaseConfig = firebaseConfig.apiKey && firebaseConfig.projectId
+
+let app = null
+let auth = null
+let googleProvider = null
+
+if (hasFirebaseConfig && !getApps().length) {
+  try {
+    app = initializeApp(firebaseConfig)
+    auth = getAuth(app)
+    googleProvider = new GoogleAuthProvider()
+  } catch (e) {
+    console.warn('Firebase init failed:', e.message)
+  }
+}
+
+export { app, auth, googleProvider }
 export default app

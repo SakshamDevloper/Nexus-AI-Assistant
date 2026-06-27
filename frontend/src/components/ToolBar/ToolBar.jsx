@@ -1,8 +1,8 @@
-import { Globe, CloudSun, BookOpen, Search, Loader2 } from 'lucide-react'
+import { Globe, CloudSun, BookOpen, MagnifyingGlass, Spinner } from '../../icons'
 import { useChatStore } from '../../stores/chatStore'
 
 const toolIcons = {
-  web_search: Search,
+  web_search: MagnifyingGlass,
   get_weather: CloudSun,
   wikipedia_lookup: BookOpen,
 }
@@ -23,7 +23,7 @@ export default function ToolBar() {
     <div className="flex items-center gap-2">
       {activeTools.length > 0 && (
         <div className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5">
-          <Loader2 size={12} className="text-accent animate-spin" />
+          <Spinner size={12} className="text-accent animate-spin" />
           <span className="text-[11px] text-white/50">
             {activeTools.length} tool{activeTools.length > 1 ? 's' : ''} active
           </span>

@@ -23,12 +23,22 @@ export default {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'spin-slow': 'spin 8s linear infinite',
         'wave': 'wave 1.2s ease-in-out infinite',
+        'star-movement-bottom': 'star-movement-bottom 6s linear infinite',
+        'star-movement-top': 'star-movement-top 6s linear infinite',
       },
       keyframes: {
         wave: {
           '0%, 100%': { transform: 'scaleY(0.4)' },
           '50%': { transform: 'scaleY(1)' },
-        }
+        },
+        'star-movement-bottom': {
+          '0%': { transform: 'translate(0%, 0%)', opacity: '1' },
+          '100%': { transform: 'translate(-100%, 0%)', opacity: '1' },
+        },
+        'star-movement-top': {
+          '0%': { transform: 'translate(0%, 0%)', opacity: '1' },
+          '100%': { transform: 'translate(100%, 0%)', opacity: '1' },
+        },
       }
     },
   },

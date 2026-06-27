@@ -47,19 +47,19 @@ NexusAI combines the **best of both worlds**: a polished, production-grade UI wi
 
 ## Features
 
-### 🎤 Voice Interface
+### Voice Interface
 - **Canvas-based VoiceOrb** — animated audio waveform avatar with 4 states: idle, listening, thinking, speaking
 - **Speech-to-Text** — browser-native `SpeechRecognition` with interim results
 - **Text-to-Speech** — browser-native `SpeechSynthesis` with auto-play on AI responses
 - **Push-to-Talk** — hold-to-speak interaction via spacebar
 
-### 💬 Chat Interface
+### Chat Interface
 - **Markdown rendering** — tables, lists, headings, code blocks via `react-markdown`
 - **Syntax highlighting** — 190+ languages via `highlight.js`, with one-click copy
 - **Streaming responses** — tokens arrive in real-time through Socket.io
 - **Session management** — history persisted across page loads
 
-### 🧠 Multi-Model AI Routing
+### Multi-Model AI Routing
 Support for 5 LLM providers with automatic fallback:
 
 | Provider | Models | Best For |
@@ -70,19 +70,19 @@ Support for 5 LLM providers with automatic fallback:
 | **Google** | Gemini 1.5 Flash | Multimodal tasks, 1M token context window |
 | **MiniMax** | MiniMax-Text-01 | 4M token context window (largest available) |
 
-### 🛠 Agentic Tools
+### Agentic Tools
 - **Web Search** (Tavily API) — real-time internet search with summarized results
 - **Weather** (OpenWeatherMap) — current conditions, forecasts, location-based queries
 - **Wikipedia** — article summaries, quick facts
 - **Extensible** — tool registry pattern for adding custom tools
 
-### 🔐 Authentication
+### Authentication
 - **Google OAuth** — one-click sign-in
 - **Email/Password** — traditional login and registration
 - **Token-based** — Firebase ID tokens verified server-side
 - **Protected routes** — consistent auth state across all pages
 
-### 💾 Persistent Memory
+### Persistent Memory
 - **Automatic** — user preferences and conversation context are stored between sessions
 - **Long-term** — MongoDB Atlas for durable storage
 - **Short-term** — Redis for active session context (TTL-based eviction)
@@ -149,14 +149,14 @@ Support for 5 LLM providers with automatic fallback:
 
 ### Data Flow
 
-1. **User speaks/types** → captured by `useSpeechRecognition` or chat input
-2. **Message dispatched** → zustand `chatStore` + Socket.io `chat:message` event
-3. **Server receives** → loads session context from Redis, appends user message
-4. **LLM call** → streamed to the configured provider with tool definitions
-5. **Token streaming** → each token emitted via Socket.io `chat:token` → rendered in real-time
-6. **Tool calls** → if LLM requests a tool, server executes it and feeds result back to LLM
-7. **Memory persisted** → conversation history saved to MongoDB, active context updated in Redis
-8. **Speech output** → on completion, `useSpeechSynthesis` reads the response aloud
+1. **User speaks/types** -- captured by `useSpeechRecognition` or chat input
+2. **Message dispatched** -- zustand `chatStore` + Socket.io `chat:message` event
+3. **Server receives** -- loads session context from Redis, appends user message
+4. **LLM call** -- streamed to the configured provider with tool definitions
+5. **Token streaming** -- each token emitted via Socket.io `chat:token` -- rendered in real-time
+6. **Tool calls** -- if LLM requests a tool, server executes it and feeds result back to LLM
+7. **Memory persisted** -- conversation history saved to MongoDB, active context updated in Redis
+8. **Speech output** -- on completion, `useSpeechSynthesis` reads the response aloud
 
 ---
 
@@ -261,8 +261,8 @@ Open **http://localhost:5173** in your browser.
 
 | Task | Accuracy | Notes |
 |------|:--------:|-------|
-| Web Search → summarization | 91% | Tavily handles relevance filtering |
-| Weather lookup → structured output | 96% | Deterministic schema mapping |
+| Web Search / summarization | 91% | Tavily handles relevance filtering |
+| Weather lookup / structured output | 96% | Deterministic schema mapping |
 | Wikipedia entity extraction | 89% | Ambiguous query disambiguation |
 | Multi-tool chaining (search + weather) | 82% | Depends on LLM reasoning quality |
 
@@ -337,15 +337,15 @@ ATHENA/
 
 | Service | Required? | Get It At | Free Tier |
 |---------|:---------:|-----------|:---------:|
-| Firebase Auth | ✅ Yes | https://console.firebase.google.com | ✅ Free (Spark plan) |
-| OpenAI | ⚠️ At least one LLM | https://platform.openai.com/api-keys | ❌ Paid (usage-based) |
-| DeepSeek | Optional | https://platform.deepseek.com | ❌ Paid (very cheap) |
-| Groq | Optional | https://console.groq.com/keys | ✅ Free rate-limited |
-| Gemini | Optional | https://aistudio.google.com/apikey | ✅ Free (60 req/min) |
-| Tavily Search | Recommended | https://app.tavily.com | ✅ Free (1,000 req/mo) |
-| OpenWeatherMap | Optional | https://openweathermap.org/api | ✅ Free (60 req/min) |
-| MongoDB Atlas | ✅ Recommended | https://cloud.mongodb.com | ✅ Free (512 MB) |
-| Redis | Optional | https://redis.com/try-free | ✅ Free (30 MB) |
+| Firebase Auth | Yes | https://console.firebase.google.com | Free (Spark plan) |
+| OpenAI | At least one LLM | https://platform.openai.com/api-keys | Paid (usage-based) |
+| DeepSeek | Optional | https://platform.deepseek.com | Paid (very cheap) |
+| Groq | Optional | https://console.groq.com/keys | Free rate-limited |
+| Gemini | Optional | https://aistudio.google.com/apikey | Free (60 req/min) |
+| Tavily Search | Recommended | https://app.tavily.com | Free (1,000 req/mo) |
+| OpenWeatherMap | Optional | https://openweathermap.org/api | Free (60 req/min) |
+| MongoDB Atlas | Recommended | https://cloud.mongodb.com | Free (512 MB) |
+| Redis | Optional | https://redis.com/try-free | Free (30 MB) |
 
 > **Tip:** To get started with zero cost, enable **Groq** (free tier, 30 req/min) + **Gemini** (free, 60 req/min) + **Tavily** (free, 1000 req/mo) + **MongoDB Atlas** (free 512 MB). You can use the app with just these.
 
@@ -353,18 +353,18 @@ ATHENA/
 
 ## Roadmap
 
-- [x] Voice input (STT) + Voice output (TTS)
-- [x] Multi-model LLM routing with streaming
-- [x] Agentic tool calling (search, weather, wikipedia)
-- [x] User authentication (Google OAuth + email)
-- [x] Persistent memory (MongoDB + Redis)
-- [x] Code syntax highlighting + copy
-- [ ] File upload & analysis (images, PDFs)
-- [ ] Custom tool creation UI
-- [ ] Chrome extension for in-browser assistant
-- [ ] iOS/Android app (React Native)
-- [ ] Local LLM support (Ollama, LM Studio)
-- [ ] Admin dashboard (usage stats, API key management)
+- (done) Voice input (STT) + Voice output (TTS)
+- (done) Multi-model LLM routing with streaming
+- (done) Agentic tool calling (search, weather, wikipedia)
+- (done) User authentication (Google OAuth + email)
+- (done) Persistent memory (MongoDB + Redis)
+- (done) Code syntax highlighting + copy
+- (pending) File upload & analysis (images, PDFs)
+- (pending) Custom tool creation UI
+- (pending) Chrome extension for in-browser assistant
+- (pending) iOS/Android app (React Native)
+- (pending) Local LLM support (Ollama, LM Studio)
+- (pending) Admin dashboard (usage stats, API key management)
 
 ---
 
@@ -387,5 +387,5 @@ For bugs and feature requests, [open an issue](https://github.com/SakshamDevlope
 ---
 
 <p align="center">
-  Built with ❤️ as a Final Year Project
+  Final Year Project
 </p>

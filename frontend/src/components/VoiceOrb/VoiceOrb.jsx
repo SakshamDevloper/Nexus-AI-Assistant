@@ -1,107 +1,85 @@
-import { useRef, useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef } from 'react'
 
-const STATES = {
-  idle: { label: 'IDLE', color: '#5ed29c', pulseSpeed: 3 },
-  listening: { label: 'LISTENING', color: '#5ed29c', pulseSpeed: 0.8 },
-  thinking: { label: 'THINKING', color: '#a78bfa', pulseSpeed: 1.5 },
-  speaking: { label: 'SPEAKING', color: '#60a5fa', pulseSpeed: 0.4 },
-}
-
-export default function VoiceOrb({ state = 'idle', audioLevel = 0 }) {
+export default function VoiceOrb({ state = 'idle', accent = '#5ed29c' }) {
   const canvasRef = useRef(null)
   const animRef = useRef(null)
-  const [time, setTime] = useState(0)
-
-  const config = STATES[state] || STATES.idle
+  const timeRef = useRef(0)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
     const ctx = canvas.getContext('2d')
-    let start = Date.now()
     let running = true
+
+    const resize = () => {
+      const size = Math.min(window.innerWidth * 0.5, 240)
+      canvas.width = size
+      canvas.height = size
+    }
+    resize()
+    window.addEventListener('resize', resize)
 
     const draw = () => {
       if (!running) return
-      const elapsed = (Date.now() - start) / 1000
-      setTime(elapsed)
+      timeRef.current += 0.02
 
       const w = canvas.width
       const h = canvas.height
       const cx = w / 2
       const cy = h / 2
-      const maxR = Math.min(w, h) * 0.4
+      const radius = w * 0.3
 
       ctx.clearRect(0, 0, w, h)
 
-      // Glow rings
-      for (let i = 0; i < 3; i++) {
-        const phase = (elapsed * (config.pulseSpeed * 0.5) + i * 2.1) % (Math.PI * 2)
-        const r = maxR * (0.3 + 0.7 * (0.5 + 0.5 * Math.sin(phase)))
-        const alpha = 0.15 * (1 - i * 0.25) * (0.6 + 0.4 * Math.sin(phase * 0.7))
+      const intensity = state === 'listening' ? 1 : state === 'speaking' ? 0.8 : state === 'thinking' ? 0.5 : 0.2
+      const pulse = state === 'listening' ? Math.sin(timeRef.current * 3) * 0.15 : 0
+
+      // Parse accent color to RGB
+      let r = 94, g = 210, b = 156
+      if (accent.startsWith('#')) {
+        const hex = accent.replace('#', '')
+        r = parseInt(hex.slice(0, 2), 16) || 94
+        g = parseInt(hex.slice(2, 4), 16) || 210
+        b = parseInt(hex.slice(4, 6), 16) || 156
+      }
+
+      // Outer glow
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 1.8)
+      grad.addColorStop(0, `rgba(${r},${g},${b},${0.12 * intensity})`)
+      grad.addColorStop(0.5, `rgba(${r},${g},${b},${0.05 * intensity})`)
+      grad.addColorStop(1, `rgba(${r},${g},${b},0)`)
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, w, h)
+
+      // Waveform rings
+      const rings = state === 'idle' ? 2 : state === 'listening' ? 5 : state === 'speaking' ? 4 : 3
+      for (let i = 0; i < rings; i++) {
+        const phase = timeRef.current * 2 + i * 1.2
+        const waveRadius = radius * (0.5 + i * 0.25) + Math.sin(phase) * (8 * intensity)
+        const alpha = (0.3 - i * 0.06) * intensity
 
         ctx.beginPath()
-        ctx.arc(cx, cy, r, 0, Math.PI * 2)
-        ctx.strokeStyle = config.color
-        ctx.globalAlpha = alpha
-        ctx.lineWidth = 1.5 - i * 0.3
+        ctx.arc(cx, cy, waveRadius, 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`
+        ctx.lineWidth = 1.5
         ctx.stroke()
       }
 
-      // Core orb with pulse
-      const pulseScale = 0.85 + 0.15 * (0.5 + 0.5 * Math.sin(elapsed * config.pulseSpeed))
-      const coreR = maxR * 0.25 * pulseScale
-
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR * 2)
-      grad.addColorStop(0, config.color)
-      grad.addColorStop(0.5, config.color + '66')
-      grad.addColorStop(1, config.color + '00')
-
+      // Center dot
+      const dotRadius = (4 + pulse * 16) * intensity + 2
       ctx.beginPath()
-      ctx.arc(cx, cy, coreR * 2, 0, Math.PI * 2)
-      ctx.fillStyle = grad
-      ctx.globalAlpha = 0.3
+      ctx.arc(cx, cy, dotRadius, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(${r},${g},${b},${0.4 + 0.3 * intensity})`
       ctx.fill()
 
+      // Center glow
+      const innerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 0.6)
+      innerGrad.addColorStop(0, `rgba(${r},${g},${b},${0.08 * intensity})`)
+      innerGrad.addColorStop(1, `rgba(${r},${g},${b},0)`)
+      ctx.fillStyle = innerGrad
       ctx.beginPath()
-      ctx.arc(cx, cy, coreR, 0, Math.PI * 2)
-      ctx.fillStyle = config.color
-      ctx.globalAlpha = 0.9
+      ctx.arc(cx, cy, radius * 0.6, 0, Math.PI * 2)
       ctx.fill()
-
-      // Waveform bars (listening / speaking)
-      if (state === 'listening' || state === 'speaking') {
-        const nBars = 32
-        const barW = 2
-        const spread = maxR * 1.4
-        const baseH = state === 'speaking' ? 20 : 12
-        const maxH = state === 'speaking' ? 50 : 30
-
-        for (let i = 0; i < nBars; i++) {
-          const angle = (i / nBars) * Math.PI * 2 - Math.PI / 2
-          const barPhase = elapsed * (state === 'speaking' ? 6 : 4) + i * 0.3
-          const audioMod = audioLevel > 0 ? audioLevel * 2 : 0.5 + 0.5 * Math.sin(barPhase)
-          const barH = baseH + maxH * audioMod * Math.sin((i / nBars) * Math.PI) ** 2
-
-          const baseR = maxR * 0.55
-          const x1 = cx + Math.cos(angle) * (baseR - barH * 0.3)
-          const y1 = cy + Math.sin(angle) * (baseR - barH * 0.3)
-
-          ctx.beginPath()
-          ctx.moveTo(x1, y1)
-          ctx.lineTo(
-            cx + Math.cos(angle) * (baseR + barH * 0.7),
-            cy + Math.sin(angle) * (baseR + barH * 0.7)
-          )
-          ctx.strokeStyle = config.color
-          ctx.globalAlpha = 0.4 + 0.4 * audioMod
-          ctx.lineWidth = barW
-          ctx.lineCap = 'round'
-          ctx.stroke()
-        }
-      }
 
       animRef.current = requestAnimationFrame(draw)
     }
@@ -110,45 +88,23 @@ export default function VoiceOrb({ state = 'idle', audioLevel = 0 }) {
 
     return () => {
       running = false
-      if (animRef.current) cancelAnimationFrame(animRef.current)
+      cancelAnimationFrame(animRef.current)
+      window.removeEventListener('resize', resize)
     }
-  }, [state, config, audioLevel])
+  }, [state, accent])
 
-  const size = 200
+  const stateLabel = state === 'listening' ? 'Listening...' : state === 'speaking' ? 'Speaking...' : state === 'thinking' ? 'Thinking...' : ''
 
   return (
     <div className="relative flex flex-col items-center">
       <canvas
         ref={canvasRef}
-        width={size * 2}
-        height={size * 2}
-        className="w-[200px] h-[200px]"
-        style={{ filter: 'url(#glow)' }}
+        className="rounded-full"
+        style={{ width: 'min(50vw, 240px)', height: 'min(50vw, 240px)' }}
       />
-      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
-        <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-      </svg>
-
-      <AnimatePresence mode="wait">
-        <motion.span
-          key={state}
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -5 }}
-          className="text-[11px] font-bold tracking-widest mt-3"
-          style={{ color: config.color }}
-        >
-          {config.label}
-        </motion.span>
-      </AnimatePresence>
+      {stateLabel && (
+        <span className="absolute bottom-0 text-xs text-white/30 animate-fade-in mt-2">{stateLabel}</span>
+      )}
     </div>
   )
 }

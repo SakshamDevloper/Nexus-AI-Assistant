@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Clock, Trash2, MessageSquare, ChevronRight } from 'lucide-react'
+import { Clock, TrashCan, Message, ChevronRight } from '../icons'
 import { useNavigate } from 'react-router-dom'
 import { useChatStore } from '../stores/chatStore'
 
@@ -61,13 +61,13 @@ export default function History() {
 
         {sortedSessions.length === 0 ? (
           <div className="text-center py-20">
-            <MessageSquare size={40} className="text-white/10 mx-auto mb-4" />
+            <Message size={40} className="text-white/10 mx-auto mb-4" />
             <p className="text-white/30 text-sm">No conversation history yet</p>
             <button
               onClick={() => navigate('/assistant')}
               className="text-accent text-sm mt-2 hover:underline"
             >
-              Start a new chat →
+              Start a new chat
             </button>
           </div>
         ) : (
@@ -81,7 +81,7 @@ export default function History() {
                     className="group flex items-center gap-3 glass rounded-xl px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer"
                     onClick={() => handleOpen(session.id)}
                   >
-                    <MessageSquare size={14} className="text-white/20 shrink-0" />
+                    <Message size={14} className="text-white/20 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-white/70 truncate">{session.title || 'New Chat'}</p>
                       <div className="flex items-center gap-1 mt-0.5">
@@ -96,7 +96,7 @@ export default function History() {
                       onClick={(e) => { e.stopPropagation(); deleteSession(session.id) }}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-white/20 hover:text-red-400 p-1"
                     >
-                      <Trash2 size={14} />
+                      <TrashCan size={14} />
                     </button>
                   </div>
                 ))}

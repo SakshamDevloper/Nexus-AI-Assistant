@@ -45,6 +45,10 @@ try {
   console.error('Firebase init error:', err.message)
 }
 
+app.get('/', (req, res) => {
+  res.json({ name: 'NexusAI Backend', version: '1.0.0', status: 'running' })
+})
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() })
 })

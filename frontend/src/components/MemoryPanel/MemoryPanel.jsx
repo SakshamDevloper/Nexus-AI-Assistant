@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Trash2, Brain, User, Clock } from 'lucide-react'
-import { X } from 'lucide-react'
+import { TrashCan, Brain, User, Clock, Xmark } from '../../icons'
 
 export default function MemoryPanel({ onClose }) {
   const [memories, setMemories] = useState([])
@@ -39,7 +38,7 @@ export default function MemoryPanel({ onClose }) {
             <h3 className="text-sm font-semibold text-white">Memory</h3>
           </div>
           <button onClick={onClose} className="text-white/30 hover:text-white/60">
-            <X size={18} />
+            <Xmark size={18} />
           </button>
         </div>
 
@@ -70,7 +69,7 @@ export default function MemoryPanel({ onClose }) {
                   onClick={() => handleDelete(mem.key)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-white/20 hover:text-red-400"
                 >
-                  <Trash2 size={14} />
+                  <TrashCan size={14} />
                 </button>
               </div>
             ))

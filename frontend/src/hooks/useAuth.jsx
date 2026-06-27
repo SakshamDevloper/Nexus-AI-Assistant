@@ -10,6 +10,10 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false)
+      return
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
       setLoading(false)
@@ -18,6 +22,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const loginWithGoogle = async () => {
+    if (!auth || !googleProvider) throw new Error('Firebase not configured')
     try {
       setError(null)
       const result = await signInWithPopup(auth, googleProvider)
@@ -29,6 +34,7 @@ export function AuthProvider({ children }) {
   }
 
   const loginWithEmail = async (email, password) => {
+    if (!auth) throw new Error('Firebase not configured')
     try {
       setError(null)
       const result = await signInWithEmailAndPassword(auth, email, password)
@@ -40,6 +46,7 @@ export function AuthProvider({ children }) {
   }
 
   const registerWithEmail = async (email, password) => {
+    if (!auth) throw new Error('Firebase not configured')
     try {
       setError(null)
       const result = await createUserWithEmailAndPassword(auth, email, password)
@@ -51,6 +58,7 @@ export function AuthProvider({ children }) {
   }
 
   const logout = async () => {
+    if (!auth) return
     try {
       await signOut(auth)
     } catch (err) {
@@ -73,6 +81,7 @@ export function AuthProvider({ children }) {
       registerWithEmail,
       logout,
       getIdToken,
+      firebaseReady: !!auth,
     }}>
       {children}
     </AuthContext.Provider>
