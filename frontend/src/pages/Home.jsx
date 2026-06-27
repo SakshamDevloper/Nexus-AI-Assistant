@@ -81,7 +81,7 @@ export default function Home() {
   const { user, logout } = useAuth()
 
   return (
-    <div className="min-h-screen bg-[#050807] overflow-x-hidden relative">
+    <div className="min-h-screen bg-bg-deep overflow-x-hidden relative">
       {/* Fullscreen Hyperspeed Background */}
       <div className="fixed inset-0 z-0">
         <Hyperspeed effectOptions={hyperspeedOptions} />

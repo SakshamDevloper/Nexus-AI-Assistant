@@ -8,11 +8,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        'bg-deep': '#070b0a',
+        'bg-deep': 'var(--bg-deep)',
+        'surface': 'var(--bg-surface)',
+        'elevated': 'var(--bg-elevated)',
         'accent': '#5ed29c',
-        'glass-bg': 'rgba(255,255,255,0.04)',
-        'text-primary': '#f0f4f2',
-        'text-muted': 'rgba(255,255,255,0.55)',
+        'glass': 'var(--glass-bg)',
+        'glass-border': 'var(--glass-border)',
+        'text-primary': 'var(--text-primary)',
+        'text-muted': 'var(--text-muted)',
+        'border-color': 'var(--border-color)',
+        'overlay': 'var(--overlay)',
+        'code-bg': 'var(--code-bg)',
+        'surface-80': 'var(--surface-80)',
+        'surface-95': 'var(--surface-95)',
+        'surface-40': 'var(--surface-40)',
       },
       fontFamily: {
         'display': ['Inter', 'sans-serif'],

@@ -34,6 +34,8 @@ export const useSettingsStore = create(
       addCustomModel: (model) => set((state) => ({
         availableModels: [...state.availableModels, model]
       })),
+      setTheme: (theme) => set({ theme }),
+      toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
     }),
     { name: 'nexus-ai-settings' }
   )

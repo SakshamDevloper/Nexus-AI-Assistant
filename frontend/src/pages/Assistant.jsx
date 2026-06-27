@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Microphone, MicrophoneSlash, PaperPlane, Bars, Brain, RightFromBracket, User, Robot, Copy, Check } from '../icons'
+import { Microphone, MicrophoneSlash, PaperPlane, Bars, Brain, RightFromBracket, User, Robot, Copy, Check, Sun, Moon } from '../icons'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -22,9 +22,9 @@ import MagicRings from '../components/ReactBits/MagicRings'
 import ShinyText from '../components/ReactBits/ShinyText'
 
 /* ---------- Mac Title Bar ---------- */
-function MacTitleBar({ modelSelector }) {
+function MacTitleBar({ modelSelector, theme, toggleTheme }) {
   return (
-    <div className="relative flex items-center h-[38px] shrink-0 bg-[#1d1e20] border-b border-white/[0.06] select-none z-30">
+    <div className="relative flex items-center h-[38px] shrink-0 bg-elevated border-b border-border-color select-none z-30">
       <div className="flex items-center gap-[7px] pl-[18px]">
         <div className="w-[13px] h-[13px] rounded-full bg-[#FF5F57] shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]" />
         <div className="w-[13px] h-[13px] rounded-full bg-[#FFBD2E] shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]" />
@@ -42,10 +42,17 @@ function MacTitleBar({ modelSelector }) {
               </linearGradient>
             </defs>
           </svg>
-          <span className="text-xs font-semibold text-white/35 tracking-wide">NexusAI — Terminal</span>
+          <span className="text-xs font-semibold text-text-muted tracking-wide">NexusAI — Terminal</span>
         </div>
       </div>
-      <div className="ml-auto flex items-center pr-3">
+      <div className="ml-auto flex items-center pr-3 gap-1.5">
+        <button
+          onClick={toggleTheme}
+          className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-overlay transition-all"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+        </button>
         {modelSelector}
       </div>
     </div>
@@ -120,7 +127,7 @@ function CodeBlock({ language, children }) {
   }
   return (
     <div className="relative group my-3">
-      <div className="flex items-center justify-between px-4 py-1.5 bg-[#0a0f0e] border-b border-white/5 rounded-t-lg">
+      <div className="flex items-center justify-between px-4 py-1.5 bg-surface border-b border-border-color rounded-t-lg">
         <span className="text-[11px] text-white/30 font-mono">{language || 'code'}</span>
         <button onClick={handleCopy} className="text-white/30 hover:text-white/60 transition-colors">
           {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -160,12 +167,12 @@ function MessageBubble({ message }) {
         <div className={`px-4 py-3 rounded-2xl ${
           isUser
             ? 'bg-gradient-to-br from-accent/20 to-accent/5 text-white rounded-tr-md ring-1 ring-accent/10'
-            : 'bg-white/5 backdrop-blur-xl border border-white/10 text-white/90 rounded-tl-md'
+            : 'bg-glass backdrop-blur-xl border border-border-color text-white/90 rounded-tl-md'
         }`}>
           {hasToolCalls && (
             <div className="mb-2 space-y-1">
               {message.toolCalls.map((tc) => (
-                <div key={tc.id} className="flex items-center gap-2 text-xs text-white/40 bg-white/5 px-2.5 py-1.5 rounded-lg font-mono">
+                <div key={tc.id} className="flex items-center gap-2 text-xs text-text-muted bg-glass px-2.5 py-1.5 rounded-lg font-mono">
                   <span className="text-accent">&#9667;</span>
                   <span>{tc.name}</span>
                   <span className="text-white/20 truncate max-w-[120px]">{tc.arguments}</span>
@@ -237,12 +244,12 @@ function ChatInterface() {
           <h2 className="text-xl font-display font-bold text-white/80 mb-2">
             <ShinyText text="Start a conversation" speed={2} shineColor="#5ed29c" />
           </h2>
-          <p className="text-sm text-white/35 max-w-xs">
+          <p className="text-sm text-text-muted max-w-xs">
             Type a message or click the mic to start speaking with NexusAI.
           </p>
           <div className="flex gap-2 mt-8">
             {['Ask anything', 'Search the web', 'Check weather'].map((hint) => (
-              <span key={hint} className="text-[11px] text-white/20 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+              <span key={hint} className="text-[11px] text-white/20 bg-glass px-3 py-1.5 rounded-full border border-border-color">
                 {hint}
               </span>
             ))}
@@ -256,7 +263,7 @@ function ChatInterface() {
 
       {pendingToolCalls.length > 0 && (
         <div className="flex items-center gap-2 px-12 py-2 animate-fade-in">
-          <div className="flex items-center gap-2.5 bg-white/5 backdrop-blur-xl rounded-full px-4 py-2 border border-white/10">
+          <div className="flex items-center gap-2.5 bg-glass backdrop-blur-xl rounded-full px-4 py-2 border border-border-color">
             <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
             <span className="text-xs text-white/45 font-mono">
               {'>'} {pendingToolCalls[pendingToolCalls.length - 1]?.name || 'processing...'}
@@ -285,7 +292,7 @@ function SidebarContent({ sessions, onSelect, onNew, onMemory, onAuth, user, onL
 
       <button
         onClick={onNew}
-        className="w-full bg-white/5 hover:bg-white/10 rounded-xl px-4 py-2.5 text-sm text-white/60 hover:text-white transition-all text-left mb-4 flex items-center gap-2 border border-white/10"
+        className="w-full bg-glass hover:bg-glass rounded-xl px-4 py-2.5 text-sm text-white/60 hover:text-white transition-all text-left mb-4 flex items-center gap-2 border border-border-color"
       >
         <span className="text-accent text-base leading-none">+</span>
         New Chat
@@ -299,24 +306,24 @@ function SidebarContent({ sessions, onSelect, onNew, onMemory, onAuth, user, onL
           <button
             key={session.id}
             onClick={() => onSelect(session.id)}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white/70 hover:bg-white/5 transition-all truncate"
+            className="w-full text-left px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-glass transition-all truncate"
           >
             {session.title || 'New Chat'}
           </button>
         ))}
       </div>
 
-      <div className="space-y-0.5 border-t border-white/10 pt-3">
+      <div className="space-y-0.5 border-t border-border-color pt-3">
         <button
           onClick={onMemory}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white/70 hover:bg-white/5 transition-all"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-glass transition-all"
         >
           <Brain size={14} className="text-accent/60" />
           Memory
         </button>
         <div className="pt-2 mt-1">
           {user ? (
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/5">
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-glass">
               <div className="flex items-center gap-2 min-w-0">
                 {user.photoURL ? (
                   <img src={user.photoURL} className="w-6 h-6 rounded-full ring-1 ring-accent/30" alt="" />
@@ -325,7 +332,7 @@ function SidebarContent({ sessions, onSelect, onNew, onMemory, onAuth, user, onL
                     <User size={12} className="text-accent" />
                   </div>
                 )}
-                <span className="text-xs text-white/40 truncate">{user.displayName || user.email || 'User'}</span>
+                <span className="text-xs text-text-muted truncate">{user.displayName || user.email || 'User'}</span>
               </div>
               <button onClick={onLogout} className="text-white/15 hover:text-red-400 transition-colors">
                 <RightFromBracket size={14} />
@@ -334,7 +341,7 @@ function SidebarContent({ sessions, onSelect, onNew, onMemory, onAuth, user, onL
           ) : (
             <button
               onClick={onAuth}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-white/5 transition-all"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-glass transition-all"
             >
               <User size={14} />
               Sign in
@@ -356,7 +363,7 @@ export default function Assistant() {
   const inputRef = useRef(null)
 
   const { messages, isStreaming, sessions, loadSession, newSession, saveSession } = useChatStore()
-  const { voiceEnabled, autoSpeak, voiceSpeed, voicePitch } = useSettingsStore()
+  const { voiceEnabled, autoSpeak, voiceSpeed, voicePitch, theme, toggleTheme } = useSettingsStore()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -421,7 +428,7 @@ export default function Assistant() {
   const showOrbOverlay = speechRec.isListening || orbState === 'speaking'
 
   return (
-    <div className="h-screen flex flex-col bg-bg-deep text-white relative overflow-hidden">
+    <div className="h-screen flex flex-col bg-bg-deep text-text-primary relative overflow-hidden">
       {/* Decorative background elements */}
       <div className="fixed -right-40 top-1/3 w-[500px] h-[500px] opacity-20 pointer-events-none z-0">
         <Orb
@@ -450,13 +457,15 @@ export default function Assistant() {
       {/* Mac Title Bar */}
       <MacTitleBar
         modelSelector={<ModelSelector />}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden" style={{ marginTop: '38px' }}>
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-[#0a0f0e]/95 backdrop-blur-xl p-4 border-r border-white/10">
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-surface-95 backdrop-blur-xl p-4 border-r border-border-color">
             <SidebarContent
               sessions={sessions}
               onSelect={(id) => { loadSession(id); setSidebarOpen(false) }}
@@ -473,7 +482,7 @@ export default function Assistant() {
       {/* Main layout: sidebar + chat */}
       <div className="flex-1 flex min-h-0 relative z-10">
         {/* Sidebar desktop */}
-        <div className="hidden md:flex w-72 flex-col bg-[#0a0f0e]/80 backdrop-blur-xl border-r border-white/10 relative z-20">
+        <div className="hidden md:flex w-72 flex-col bg-surface-80 backdrop-blur-xl border-r border-border-color relative z-20">
           <SidebarContent
             sessions={sessions}
             onSelect={loadSession}
@@ -488,16 +497,16 @@ export default function Assistant() {
         {/* Main chat area */}
         <div className="flex-1 flex flex-col min-w-0 relative z-20">
           {/* Inner toolbar */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-[#0a0f0e]/40">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border-color bg-surface-40">
             <div className="flex items-center gap-2">
               <button
-                className="md:hidden text-white/40 hover:text-white/70 transition-colors"
+                className="md:hidden text-text-muted hover:text-text-primary transition-colors"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Bars size={18} />
               </button>
               <div className={`w-[7px] h-[7px] rounded-full ${isConnected ? 'bg-accent shadow-sm shadow-accent/40 animate-pulse' : 'bg-red-400'}`} />
-              <span className="text-[11px] text-white/25 font-mono ml-1">
+              <span className="text-[11px] text-text-muted font-mono ml-1">
                 {isConnected ? 'connected' : 'disconnected'}
               </span>
             </div>
@@ -513,9 +522,9 @@ export default function Assistant() {
           </div>
 
           {/* Input area */}
-          <div className="px-4 pb-4 pt-3 border-t border-white/10 relative z-30 bg-[#0a0f0e]/80 backdrop-blur-xl">
+          <div className="px-4 pb-4 pt-3 border-t border-border-color relative z-30 bg-surface-80 backdrop-blur-xl">
             <div className="max-w-3xl mx-auto">
-              <div className="flex items-end gap-2 bg-white/5 rounded-2xl border border-white/10 p-2 focus-within:border-accent/30 focus-within:ring-1 focus-within:ring-accent/10 transition-all">
+              <div className="flex items-end gap-2 bg-glass rounded-2xl border border-border-color p-2 focus-within:border-accent/30 focus-within:ring-1 focus-within:ring-accent/10 transition-all">
                 <div className="flex-1 relative">
                   <textarea
                     ref={inputRef}
@@ -538,7 +547,7 @@ export default function Assistant() {
                   className={`p-2.5 rounded-xl transition-all ${
                     speechRec.isListening
                       ? 'bg-accent text-bg-deep shadow-lg shadow-accent/25'
-                      : 'text-white/40 hover:bg-white/10 hover:text-white/70'
+                      : 'text-text-muted hover:bg-glass hover:text-text-primary'
                   }`}
                 >
                   {speechRec.isListening ? <MicrophoneSlash size={18} /> : <Microphone size={18} />}
