@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { ArrowRight, Sparkles, Bolt, User } from '../icons'
 import { useNavigate } from 'react-router-dom'
 import AuthModal from '../components/Auth/AuthModal'
@@ -39,7 +39,7 @@ const partnerLogos = [
   { node: <span className="text-xl font-black text-white/40 font-display tracking-widest">LLM</span> },
 ]
 
-const hyperspeedOptions = useMemo(() => ({
+const hyperspeedOptions = {
   distortion: 'turbulentDistortion',
   length: 400,
   roadWidth: 10,
@@ -73,7 +73,7 @@ const hyperspeedOptions = useMemo(() => ({
     rightCars: [242627, 941733, 3294549],
     sticks: 242627,
   }
-}), [])
+}
 
 export default function Home() {
   const [authOpen, setAuthOpen] = useState(false)
