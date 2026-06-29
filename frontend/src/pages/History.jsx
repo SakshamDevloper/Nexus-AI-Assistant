@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Clock, TrashCan, Message, ChevronRight } from '../icons'
 import { useNavigate } from 'react-router-dom'
 import { useChatStore } from '../stores/chatStore'
+import StaggeredMenu from '../components/ReactBits/StaggeredMenu'
 
 export default function History() {
   const navigate = useNavigate()
@@ -45,6 +46,24 @@ export default function History() {
 
   return (
     <div className="min-h-screen bg-bg-deep text-white">
+      {/* Global Navigation */}
+      <StaggeredMenu
+        position="right"
+        isFixed={true}
+        logoUrl="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%235ed29c'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='40' rx='10' fill='url(%23g)'/%3E%3Ctext x='20' y='26' text-anchor='middle' fill='%23000' font-size='20' font-weight='900' font-family='sans-serif'%3EN%3C/text%3E%3C/svg%3E"
+        items={[
+          { label: 'Home', ariaLabel: 'Go to home page', link: '/' },
+          { label: 'Assistant', ariaLabel: 'Go to the assistant chat', link: '/assistant' },
+        ]}
+        accentColor="#5ed29c"
+        colors={['#070b0a', '#0d1412', '#111a17']}
+        menuButtonColor="#ffffff"
+        openMenuButtonColor="#5ed29c"
+        changeMenuColorOnOpen={true}
+        displaySocials={false}
+        displayItemNumbering={true}
+      />
+
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
