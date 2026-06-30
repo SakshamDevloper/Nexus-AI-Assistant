@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
-import { Microphone, MicrophoneSlash, PaperPlane, Bars, Brain, RightFromBracket, User, Robot, Copy, Check, Sun, Moon } from '../icons'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { Microphone, MicrophoneSlash, PaperPlane, Bars, Brain, RightFromBracket, User, Robot, Copy, Check, Sun, Moon, Plus } from '../icons'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import VoiceOrb from '../components/VoiceOrb/VoiceOrb'
 import ModelSelector from '../components/ModelSelector/ModelSelector'
-import ToolBar from '../components/ToolBar/ToolBar'
+
 import MemoryPanel from '../components/MemoryPanel/MemoryPanel'
 import AuthModal from '../components/Auth/AuthModal'
 import { useChatStore } from '../stores/chatStore'
@@ -16,48 +16,11 @@ import { useAgentStream } from '../hooks/useAgentStream'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 
-import Orb from '../components/ReactBits/Orb'
-import GradualBlur from '../components/ReactBits/GradualBlur'
+import StaggeredMenu from '../components/ReactBits/StaggeredMenu'
+import GooeyNav from '../components/ReactBits/GooeyNav'
 import MagicRings from '../components/ReactBits/MagicRings'
-import ShinyText from '../components/ReactBits/ShinyText'
 
-/* ---------- Mac Title Bar ---------- */
-function MacTitleBar({ modelSelector, theme, toggleTheme }) {
-  return (
-    <div className="relative flex items-center h-[38px] shrink-0 bg-elevated border-b border-border-color select-none z-30">
-      <div className="flex items-center gap-[7px] pl-[18px]">
-        <div className="w-[13px] h-[13px] rounded-full bg-[#FF5F57] shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]" />
-        <div className="w-[13px] h-[13px] rounded-full bg-[#FFBD2E] shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]" />
-        <div className="w-[13px] h-[13px] rounded-full bg-[#28C840] shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]" />
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="10" fill="url(#n-grad)" />
-            <text x="20" y="27" textAnchor="middle" fill="#050807" fontSize="22" fontWeight="900" fontFamily="system-ui">N</text>
-            <defs>
-              <linearGradient id="n-grad" x1="0" y1="0" x2="100" y2="100">
-                <stop offset="0%" stopColor="#5ed29c" />
-                <stop offset="100%" stopColor="#6366f1" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <span className="text-xs font-semibold text-text-muted tracking-wide">NexusAI — Terminal</span>
-        </div>
-      </div>
-      <div className="ml-auto flex items-center pr-3 gap-1.5">
-        <button
-          onClick={toggleTheme}
-          className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-overlay transition-all"
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
-        </button>
-        {modelSelector}
-      </div>
-    </div>
-  )
-}
+
 
 /* ---------- Voice Wave Grid Overlay ---------- */
 function VoiceWaveGrid({ state, accent = '#5ed29c' }) {
@@ -65,28 +28,18 @@ function VoiceWaveGrid({ state, accent = '#5ed29c' }) {
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-[5] pointer-events-none overflow-hidden"
-        style={{ marginTop: '38px' }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: [
-              `linear-gradient(to right, ${accent}18 1px, transparent 1px)`,
-              `linear-gradient(to bottom, ${accent}18 1px, transparent 1px)`,
-            ].join(', '),
-            backgroundSize: '48px 48px',
-            opacity: 0.06,
-          }}
-        />
+      <div className="fixed inset-0 z-[5] pointer-events-none overflow-hidden">
+        <div className="absolute inset-0" style={{
+          backgroundImage: [
+            `linear-gradient(to right, ${accent}18 1px, transparent 1px)`,
+            `linear-gradient(to bottom, ${accent}18 1px, transparent 1px)`,
+          ].join(', '),
+          backgroundSize: '48px 48px',
+          opacity: 0.06,
+        }} />
       </div>
-
       {active && (
-        <div
-          className="fixed inset-0 z-[6] pointer-events-none overflow-hidden"
-          style={{ marginTop: '38px' }}
-        >
+        <div className="fixed inset-0 z-[6] pointer-events-none overflow-hidden">
           <style>{`
             @keyframes wavePulse {
               0%, 100% { opacity: 0.08; transform: scaleY(1); }
@@ -95,20 +48,14 @@ function VoiceWaveGrid({ state, accent = '#5ed29c' }) {
           `}</style>
           <div className="absolute inset-0 flex items-center justify-center">
             {Array.from({ length: 11 }).map((_, i) => (
-              <div
-                key={i}
-                className="absolute left-0 right-0 h-[1px]"
-                style={{
-                  top: `${8 + i * 8}%`,
-                  background: `linear-gradient(90deg, transparent 5%, ${accent}33 20%, ${accent}77 50%, ${accent}33 80%, transparent 95%)`,
-                  animation: `wavePulse ${1.2 + i * 0.15}s ease-in-out infinite`,
-                  animationDelay: `${i * 0.12}s`,
-                  boxShadow: state === 'listening'
-                    ? `0 0 6px ${accent}55, 0 0 20px ${accent}22`
-                    : `0 0 4px ${accent}44`,
-                  filter: 'blur(0.5px)',
-                }}
-              />
+              <div key={i} className="absolute left-0 right-0 h-[1px]" style={{
+                top: `${8 + i * 8}%`,
+                background: `linear-gradient(90deg, transparent 5%, ${accent}33 20%, ${accent}77 50%, ${accent}33 80%, transparent 95%)`,
+                animation: `wavePulse ${1.2 + i * 0.15}s ease-in-out infinite`,
+                animationDelay: `${i * 0.12}s`,
+                boxShadow: state === 'listening' ? `0 0 6px ${accent}55, 0 0 20px ${accent}22` : `0 0 4px ${accent}44`,
+                filter: 'blur(0.5px)',
+              }} />
             ))}
           </div>
         </div>
@@ -133,12 +80,7 @@ function CodeBlock({ language, children }) {
           {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
       </div>
-      <SyntaxHighlighter
-        style={oneDark}
-        language={language || 'text'}
-        customStyle={{ margin: 0, borderRadius: '0 0 8px 8px', fontSize: '13px', background: '#0a0f0e' }}
-        showLineNumbers
-      >
+      <SyntaxHighlighter style={oneDark} language={language || 'text'} customStyle={{ margin: 0, borderRadius: '0 0 8px 8px', fontSize: '13px', background: '#0a0f0e' }} showLineNumbers>
         {children}
       </SyntaxHighlighter>
     </div>
@@ -151,75 +93,59 @@ function MessageBubble({ message }) {
   const hasToolCalls = message.toolCalls?.length > 0
 
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''} animate-slide-up`}>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${
-        isUser
-          ? 'bg-gradient-to-br from-accent/30 to-accent/10 ring-1 ring-accent/20'
-          : 'bg-accent/10 ring-1 ring-accent/20'
+    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+        isUser ? 'bg-accent/20 ring-1 ring-accent/20' : 'bg-accent/10 ring-1 ring-accent/10'
       }`}>
-        {isUser
-          ? <User size={14} className="text-accent" />
-          : <Robot size={14} className="text-accent" />
-        }
+        {isUser ? <User size={12} className="text-accent" /> : <Robot size={12} className="text-accent" />}
       </div>
-
-      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[80%]`}>
-        <div className={`px-4 py-3 rounded-2xl ${
+      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%]`}>
+        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
           isUser
-            ? 'bg-gradient-to-br from-accent/20 to-accent/5 text-white rounded-tr-md ring-1 ring-accent/10'
-            : 'bg-glass backdrop-blur-xl border border-border-color text-white/90 rounded-tl-md'
+            ? 'bg-accent/15 text-white/90 rounded-tr-md'
+            : 'bg-white/[0.04] border border-white/[0.06] text-white/80 rounded-tl-md'
         }`}>
           {hasToolCalls && (
             <div className="mb-2 space-y-1">
               {message.toolCalls.map((tc) => (
-                <div key={tc.id} className="flex items-center gap-2 text-xs text-text-muted bg-glass px-2.5 py-1.5 rounded-lg font-mono">
+                <div key={tc.id} className="flex items-center gap-2 text-xs text-text-muted bg-white/[0.03] px-2.5 py-1.5 rounded-lg font-mono">
                   <span className="text-accent">&#9667;</span>
                   <span>{tc.name}</span>
-                  <span className="text-white/20 truncate max-w-[120px]">{tc.arguments}</span>
+                  <span className="text-white/15 truncate max-w-[120px]">{tc.arguments}</span>
                 </div>
               ))}
             </div>
           )}
-
           {isUser ? (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+            <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
             <div className="prose prose-sm prose-invert">
               {message.streaming && !message.content ? (
-                <div className="flex gap-1.5 py-2">
-                  <span className="w-2 h-2 rounded-full bg-accent/60 typing-dot" />
-                  <span className="w-2 h-2 rounded-full bg-accent/60 typing-dot" />
-                  <span className="w-2 h-2 rounded-full bg-accent/60 typing-dot" />
+                <div className="flex gap-1 py-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent/60" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent/60" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent/60" />
                 </div>
               ) : (
-                <ReactMarkdown
-                  components={{
-                    code({ node, inline, className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || '')
-                      return !inline ? (
-                        <CodeBlock language={match ? match[1] : ''}>
-                          {String(children).replace(/\n$/, '')}
-                        </CodeBlock>
-                      ) : (
-                        <code className="bg-white/10 px-1.5 py-0.5 rounded text-sm" {...props}>
-                          {children}
-                        </code>
-                      )
-                    },
-                  }}
-                >
+                <ReactMarkdown components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '')
+                    return !inline ? (
+                      <CodeBlock language={match ? match[1] : ''}>{String(children).replace(/\n$/, '')}</CodeBlock>
+                    ) : (
+                      <code className="bg-white/10 px-1.5 py-0.5 rounded text-sm" {...props}>{children}</code>
+                    )
+                  },
+                }}>
                   {message.content}
                 </ReactMarkdown>
               )}
               {message.streaming && message.content && (
-                <span className="inline-block w-2 h-2 bg-accent rounded-full animate-pulse ml-1" />
+                <span className="inline-block w-1.5 h-1.5 bg-accent rounded-full ml-0.5" />
               )}
             </div>
           )}
         </div>
-        <p className="text-[10px] text-white/15 mt-1.5 px-1">
-          {message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-        </p>
       </div>
     </div>
   )
@@ -235,21 +161,15 @@ function ChatInterface() {
   }, [messages, pendingToolCalls])
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-5 scroll-smooth">
+    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth">
       {messages.length === 0 && !isStreaming && (
-        <div className="flex flex-col items-center justify-center h-full text-center py-20 animate-fade-in">
-          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center mb-6 ring-1 ring-accent/10 pulse-glow">
-            <Robot size={40} className="text-accent" />
-          </div>
-          <h2 className="text-xl font-display font-bold text-white/80 mb-2">
-            <ShinyText text="Start a conversation" speed={2} shineColor="#5ed29c" />
-          </h2>
-          <p className="text-sm text-text-muted max-w-xs">
+        <div className="flex flex-col items-center justify-center h-full text-center py-16">
+          <p className="text-sm text-text-muted max-w-xs leading-relaxed">
             Type a message or click the mic to start speaking with NexusAI.
           </p>
-          <div className="flex gap-2 mt-8">
+          <div className="flex gap-2 mt-6">
             {['Ask anything', 'Search the web', 'Check weather'].map((hint) => (
-              <span key={hint} className="text-[11px] text-white/20 bg-glass px-3 py-1.5 rounded-full border border-border-color">
+              <span key={hint} className="text-xs text-white/20 bg-white/[0.03] px-3 py-1.5 rounded-full border border-white/[0.06]">
                 {hint}
               </span>
             ))}
@@ -262,10 +182,10 @@ function ChatInterface() {
       ))}
 
       {pendingToolCalls.length > 0 && (
-        <div className="flex items-center gap-2 px-12 py-2 animate-fade-in">
-          <div className="flex items-center gap-2.5 bg-glass backdrop-blur-xl rounded-full px-4 py-2 border border-border-color">
-            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-xs text-white/45 font-mono">
+        <div className="flex items-center gap-2 px-4 py-1">
+          <div className="flex items-center gap-2 bg-white/[0.03] rounded-full px-3 py-1.5 border border-white/[0.06]">
+            <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+            <span className="text-xs text-white/30 font-mono">
               {'>'} {pendingToolCalls[pendingToolCalls.length - 1]?.name || 'processing...'}
             </span>
           </div>
@@ -277,82 +197,6 @@ function ChatInterface() {
   )
 }
 
-/* ---------- Sidebar Content ---------- */
-function SidebarContent({ sessions, onSelect, onNew, onMemory, onAuth, user, onLogout }) {
-  return (
-    <>
-      <div className="flex items-center justify-between mb-6 px-1">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center shadow-lg shadow-accent/20">
-            <span className="text-xs font-bold text-bg-deep">N</span>
-          </div>
-          <span className="text-sm font-semibold text-white/80">NexusAI</span>
-        </div>
-      </div>
-
-      <button
-        onClick={onNew}
-        className="w-full bg-glass hover:bg-glass rounded-xl px-4 py-2.5 text-sm text-white/60 hover:text-white transition-all text-left mb-4 flex items-center gap-2 border border-border-color"
-      >
-        <span className="text-accent text-base leading-none">+</span>
-        New Chat
-      </button>
-
-      <div className="flex-1 overflow-y-auto space-y-0.5 mb-4 custom-scrollbar">
-        {sessions.length === 0 && (
-          <p className="text-xs text-white/15 text-center py-6">No history yet</p>
-        )}
-        {sessions.slice(0, 20).map((session) => (
-          <button
-            key={session.id}
-            onClick={() => onSelect(session.id)}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-glass transition-all truncate"
-          >
-            {session.title || 'New Chat'}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-0.5 border-t border-border-color pt-3">
-        <button
-          onClick={onMemory}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-glass transition-all"
-        >
-          <Brain size={14} className="text-accent/60" />
-          Memory
-        </button>
-        <div className="pt-2 mt-1">
-          {user ? (
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-glass">
-              <div className="flex items-center gap-2 min-w-0">
-                {user.photoURL ? (
-                  <img src={user.photoURL} className="w-6 h-6 rounded-full ring-1 ring-accent/30" alt="" />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center ring-1 ring-accent/20">
-                    <User size={12} className="text-accent" />
-                  </div>
-                )}
-                <span className="text-xs text-text-muted truncate">{user.displayName || user.email || 'User'}</span>
-              </div>
-              <button onClick={onLogout} className="text-white/15 hover:text-red-400 transition-colors">
-                <RightFromBracket size={14} />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={onAuth}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-accent hover:bg-glass transition-all"
-            >
-              <User size={14} />
-              Sign in
-            </button>
-          )}
-        </div>
-      </div>
-    </>
-  )
-}
-
 /* ---------- Main Export ---------- */
 export default function Assistant() {
   const [input, setInput] = useState('')
@@ -360,7 +204,9 @@ export default function Assistant() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [orbState, setOrbState] = useState('idle')
+  const [showUpload, setShowUpload] = useState(false)
   const inputRef = useRef(null)
+  const fileRef = useRef(null)
 
   const { messages, isStreaming, sessions, loadSession, newSession, saveSession } = useChatStore()
   const { voiceEnabled, autoSpeak, voiceSpeed, voicePitch, theme, toggleTheme } = useSettingsStore()
@@ -373,9 +219,7 @@ export default function Assistant() {
     interimResults: true,
     language: 'en-US',
     onResult: (text, isFinal) => {
-      if (isFinal) {
-        setInput(prev => prev + text)
-      }
+      if (isFinal) setInput(prev => prev + text)
     },
     onStart: () => setOrbState('listening'),
     onEnd: () => setOrbState(isStreaming ? 'thinking' : 'idle'),
@@ -405,13 +249,13 @@ export default function Assistant() {
     }
   }, [messages, isStreaming, autoSpeak, voiceSpeed, voicePitch])
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     if (!input.trim() || isStreaming) return
     saveSession()
     sendMessage(input.trim())
     setInput('')
     inputRef.current?.focus()
-  }
+  }, [input, isStreaming, saveSession, sendMessage])
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -425,115 +269,170 @@ export default function Assistant() {
     else speechRec.start()
   }
 
+  const handleFileSelect = (e) => {
+    const files = e.target.files
+    if (files?.length) {
+      // File selection handled here — show name as preview
+      setInput(prev => prev + ` [${files[0].name}]`)
+      setShowUpload(false)
+    }
+    e.target.value = ''
+  }
+
   const showOrbOverlay = speechRec.isListening || orbState === 'speaking'
 
   return (
     <div className="h-screen flex flex-col bg-bg-deep text-text-primary relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="fixed -right-40 top-1/3 w-[500px] h-[500px] opacity-20 pointer-events-none z-0">
-        <Orb
-          hue={140}
-          hoverIntensity={0.15}
-          rotateOnHover={false}
-          backgroundColor="#070b0a"
-        />
+      {/* Global Navigation */}
+      <StaggeredMenu
+        position="right"
+        isFixed={true}
+        items={[
+          { label: 'Home', ariaLabel: 'Go to home page', link: '/' },
+          { label: 'History', ariaLabel: 'View conversation history', link: '/history' },
+        ]}
+        accentColor="#5ed29c"
+        colors={['#0a0f0e', '#0d1412', '#111a17']}
+        menuButtonColor="#ffffff"
+        openMenuButtonColor="#5ed29c"
+        changeMenuColorOnOpen={true}
+        displaySocials={false}
+        displayItemNumbering={true}
+      />
+
+      {/* Fixed top-left branding */}
+      <div className="fixed top-3 left-3 z-50 flex items-center gap-2 pointer-events-none">
+        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center">
+          <span className="text-[10px] font-black text-black">N</span>
+        </div>
+        <span className="text-xs font-display font-semibold text-white/40">NexusAI</span>
       </div>
-      <div className="fixed left-[-15%] bottom-[-10%] w-[500px] h-[500px] opacity-10 pointer-events-none z-0">
-        <MagicRings
-          ringCount={8}
-          baseRadius={0.35}
-          radiusStep={0.14}
-          lineThickness={0.02}
-          color="#5ed29c"
-          colorTwo="#6366f1"
-          opacity={0.4}
-          rotation={0.25}
-        />
+
+      {/* Decorative background elements */}
+      <div className="fixed -right-40 top-1/3 w-[500px] h-[500px] opacity-15 pointer-events-none z-0">
+        <MagicRings ringCount={6} baseRadius={0.3} radiusStep={0.12} lineThickness={0.015} color="#5ed29c" colorTwo="#6366f1" opacity={0.3} rotation={0.2} />
       </div>
 
       {/* Voice Wave Grid */}
       <VoiceWaveGrid state={orbState} />
 
-      {/* Mac Title Bar */}
-      <MacTitleBar
-        modelSelector={<ModelSelector />}
-        theme={theme}
-        toggleTheme={toggleTheme}
-      />
+      {/* Floating controls */}
+      <div className="fixed top-3 right-3 z-50 flex items-center gap-1.5 md:hidden">
+        <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/[0.06] transition-all">
+          <Bars size={15} />
+        </button>
+      </div>
+      <div className="fixed top-3 right-3 z-50 hidden md:flex items-center gap-1.5">
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/[0.06] transition-all"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+        </button>
+      </div>
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 md:hidden" style={{ marginTop: '38px' }}>
+        <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-surface-95 backdrop-blur-xl p-4 border-r border-border-color">
-            <SidebarContent
-              sessions={sessions}
-              onSelect={(id) => { loadSession(id); setSidebarOpen(false) }}
-              onNew={() => { newSession(); setSidebarOpen(false) }}
-              onMemory={() => { setMemoryOpen(true); setSidebarOpen(false) }}
-              onAuth={() => { setAuthOpen(true); setSidebarOpen(false) }}
-              user={user}
-              onLogout={logout}
-            />
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-surface-95 backdrop-blur-xl p-4 border-r border-border-color flex flex-col">
+            <div className="mb-6">
+              <GooeyNav items={[
+                { label: user?.displayName || user?.email || 'Sign In', href: '#', icon: <User size={15} /> },
+                { label: 'New Chat', href: '#', icon: <span className="text-lg leading-none">+</span> },
+                { label: 'Memory', href: '#', icon: <Brain size={15} /> },
+              ]} animationTime={500} particleCount={10} particleDistances={[60, 8]} particleR={80} timeVariance={200} initialActiveIndex={0}
+                onItemClick={(i) => {
+                  if (i === 0 && !user) setAuthOpen(true)
+                  if (i === 1) { newSession(); setSidebarOpen(false) }
+                  if (i === 2) { setMemoryOpen(true); setSidebarOpen(false) }
+                }} />
+            </div>
+            {user && (
+              <button onClick={logout} className="mt-auto flex items-center gap-2 px-3 py-2 text-xs text-white/20 hover:text-red-400 transition-colors">
+                <RightFromBracket size={12} /> Logout
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* Main layout: sidebar + chat */}
+      {/* Main layout */}
       <div className="flex-1 flex min-h-0 relative z-10">
         {/* Sidebar desktop */}
-        <div className="hidden md:flex w-72 flex-col bg-surface-80 backdrop-blur-xl border-r border-border-color relative z-20">
-          <SidebarContent
-            sessions={sessions}
-            onSelect={loadSession}
-            onNew={newSession}
-            onMemory={() => setMemoryOpen(true)}
-            onAuth={() => setAuthOpen(true)}
-            user={user}
-            onLogout={logout}
-          />
+        <div className="hidden md:flex w-72 flex-col bg-surface-80 backdrop-blur-xl border-r border-border-color relative z-20 p-4">
+          <div className="mb-6">
+            <GooeyNav items={[
+              { label: user?.displayName || user?.email || 'Sign In', href: '#', icon: <User size={15} /> },
+              { label: 'New Chat', href: '#', icon: <span className="text-lg leading-none">+</span> },
+              { label: 'Memory', href: '#', icon: <Brain size={15} /> },
+            ]} animationTime={500} particleCount={10} particleDistances={[60, 8]} particleR={80} timeVariance={200} initialActiveIndex={0}
+              onItemClick={(i) => {
+                if (i === 0 && !user) setAuthOpen(true)
+                if (i === 1) newSession()
+                if (i === 2) setMemoryOpen(true)
+              }} />
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-0.5 mb-4 custom-scrollbar">
+            {sessions.length === 0 && (
+              <p className="text-xs text-white/15 text-center py-6">No history yet</p>
+            )}
+            {sessions.slice(0, 20).map((session) => (
+              <button key={session.id} onClick={() => loadSession(session.id)}
+                className="w-full text-left px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.03] transition-all truncate">
+                {session.title || 'New Chat'}
+              </button>
+            ))}
+          </div>
+          {user && (
+            <button onClick={logout} className="flex items-center gap-2 px-3 py-2 text-xs text-white/20 hover:text-red-400 transition-colors">
+              <RightFromBracket size={12} /> Logout
+            </button>
+          )}
         </div>
 
         {/* Main chat area */}
         <div className="flex-1 flex flex-col min-w-0 relative z-20">
-          {/* Inner toolbar */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border-color bg-surface-40">
-            <div className="flex items-center gap-2">
-              <button
-                className="md:hidden text-text-muted hover:text-text-primary transition-colors"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Bars size={18} />
-              </button>
-              <div className={`w-[7px] h-[7px] rounded-full ${isConnected ? 'bg-accent shadow-sm shadow-accent/40 animate-pulse' : 'bg-red-400'}`} />
-              <span className="text-[11px] text-text-muted font-mono ml-1">
-                {isConnected ? 'connected' : 'disconnected'}
-              </span>
-            </div>
-            <ToolBar />
-          </div>
-
           {/* Chat messages */}
           <div className="flex-1 relative">
             <ChatInterface />
-            <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-10">
-              <GradualBlur position="bottom" height="4rem" strength={1} opacity={0.8} divCount={5} />
-            </div>
           </div>
 
-          {/* Input area */}
-          <div className="px-4 pb-4 pt-3 border-t border-border-color relative z-30 bg-surface-80 backdrop-blur-xl">
+          {/* Input area — ChatGPT style */}
+          <div className="px-3 pb-3 pt-2 relative z-30">
             <div className="max-w-3xl mx-auto">
-              <div className="flex items-end gap-2 bg-glass rounded-2xl border border-border-color p-2 focus-within:border-accent/30 focus-within:ring-1 focus-within:ring-accent/10 transition-all">
+              <div className="flex items-end gap-1.5 bg-white/[0.04] border border-white/[0.08] rounded-2xl p-1.5 focus-within:border-white/[0.15] transition-all">
+                {/* + Upload button */}
+                <div className="relative">
+                  <button onClick={() => setShowUpload(!showUpload)}
+                    className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-white/[0.06] transition-all">
+                    <Plus size={18} />
+                  </button>
+                  {showUpload && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowUpload(false)} />
+                      <div className="absolute bottom-full left-0 mb-2 z-20 bg-surface-95 backdrop-blur-xl border border-border-color rounded-xl p-1.5 shadow-lg min-w-[160px]">
+                        <button onClick={() => { fileRef.current?.click(); setShowUpload(false) }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] rounded-lg transition-all text-left">
+                          <span className="text-base">&#128206;</span> Image
+                        </button>
+                        <button onClick={() => { fileRef.current?.click(); setShowUpload(false) }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] rounded-lg transition-all text-left">
+                          <span className="text-base">&#128196;</span> Document
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx,.txt" className="hidden" onChange={handleFileSelect} />
+                </div>
+
+                {/* Textarea */}
                 <div className="flex-1 relative">
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type a message or click the mic..."
-                    rows={1}
-                    className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder-white/20 resize-none focus:outline-none"
+                  <textarea ref={inputRef} value={input}
+                    onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown}
+                    placeholder="Message NexusAI..." rows={1}
+                    className="w-full bg-transparent px-2 py-2 text-sm text-white placeholder-white/20 resize-none focus:outline-none"
                     style={{ maxHeight: '120px' }}
                     onInput={(e) => {
                       e.target.style.height = 'auto'
@@ -542,28 +441,36 @@ export default function Assistant() {
                   />
                 </div>
 
-                <button
-                  onClick={handleMicToggle}
-                  className={`p-2.5 rounded-xl transition-all ${
-                    speechRec.isListening
-                      ? 'bg-accent text-bg-deep shadow-lg shadow-accent/25'
-                      : 'text-text-muted hover:bg-glass hover:text-text-primary'
-                  }`}
-                >
-                  {speechRec.isListening ? <MicrophoneSlash size={18} /> : <Microphone size={18} />}
+                {/* Model selector inline */}
+                <div className="shrink-0">
+                  <ModelSelector />
+                </div>
+
+                {/* Mic */}
+                <button onClick={handleMicToggle}
+                  className={`p-2 rounded-xl transition-all ${
+                    speechRec.isListening ? 'bg-accent text-bg-deep' : 'text-text-muted hover:text-text-primary hover:bg-white/[0.06]'
+                  }`}>
+                  {speechRec.isListening ? <MicrophoneSlash size={16} /> : <Microphone size={16} />}
                 </button>
 
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim() || isStreaming}
-                  className="p-2.5 rounded-xl bg-accent text-bg-deep hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20"
-                >
-                  <PaperPlane size={18} />
+                {/* Send */}
+                <button onClick={handleSend} disabled={!input.trim() || isStreaming}
+                  className="p-2 rounded-xl bg-accent text-bg-deep hover:brightness-110 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                  <PaperPlane size={16} />
                 </button>
               </div>
 
+              {/* Connection indicator */}
+              <div className="flex items-center justify-center gap-1.5 mt-2">
+                <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-accent' : 'bg-red-400'}`} />
+                <span className="text-[10px] text-white/15 font-mono">
+                  {isConnected ? 'connected' : 'disconnected'}
+                </span>
+              </div>
+
               {speechRec.interimTranscript && (
-                <p className="text-xs text-white/20 mt-2 italic text-center">{speechRec.interimTranscript}</p>
+                <p className="text-xs text-white/15 mt-1.5 italic text-center">{speechRec.interimTranscript}</p>
               )}
             </div>
           </div>
@@ -573,12 +480,7 @@ export default function Assistant() {
       {/* Voice Orb overlay */}
       {showOrbOverlay && (
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50">
-          <div className="relative">
-            <div className="absolute inset-[-50px] opacity-30 pointer-events-none">
-              <Orb hue={orbState === 'listening' ? 180 : 140} hoverIntensity={0.1} rotateOnHover={false} backgroundColor="#070b0a" />
-            </div>
-            <VoiceOrb state={orbState} />
-          </div>
+          <VoiceOrb state={orbState} />
         </div>
       )}
 

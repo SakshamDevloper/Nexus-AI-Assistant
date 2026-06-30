@@ -30,6 +30,7 @@ import {
   faBookOpen,
   faSun,
   faMoon,
+  faPlus,
 } from '@fortawesome/free-solid-svg-icons'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 
@@ -70,3 +71,4 @@ export const CloudSun = icon(faCloudSun)
 export const BookOpen = icon(faBookOpen)
 export const Sun = icon(faSun)
 export const Moon = icon(faMoon)
+export const Plus = icon(faPlus)
