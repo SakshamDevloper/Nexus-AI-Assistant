@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app'
-import { getAuth, GoogleAuthProvider, connectAuthEmulator } from 'firebase/auth'
+import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -10,7 +10,17 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 }
 
-const hasFirebaseConfig = firebaseConfig.apiKey && firebaseConfig.projectId
+// Firebase Web API keys always start with "AIzaSy"
+const isValidApiKey = typeof firebaseConfig.apiKey === 'string' && firebaseConfig.apiKey.startsWith('AIzaSy')
+const hasFirebaseConfig = isValidApiKey && firebaseConfig.projectId
+
+if (firebaseConfig.apiKey && !isValidApiKey) {
+  console.warn(
+    'Firebase: VITE_FIREBASE_API_KEY appears invalid. ' +
+    'A Firebase Web API key must start with "AIzaSy". ' +
+    'Copy it from Firebase Console → Project Settings → General → Your apps.'
+  )
+}
 
 let app = null
 let auth = null
