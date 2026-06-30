@@ -1,84 +1,22 @@
 import { useCallback, useRef, useState, useEffect } from 'react'
-import { io } from 'socket.io-client'
 import { useChatStore } from '../stores/chatStore'
 import { useSettingsStore } from '../stores/settingsStore'
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001'
-
 export function useAgentStream() {
-  const socketRef = useRef(null)
-  const [isConnected, setIsConnected] = useState(false)
+  const abortRef = useRef(null)
+  const [isConnected, setIsConnected] = useState(true)
   const [error, setError] = useState(null)
-  const accumRef = useRef({})
 
   const { addMessage, updateMessage, setStreaming, addToolCall, updateToolCall, clearToolCalls } = useChatStore()
   const { selectedModel } = useSettingsStore()
 
   useEffect(() => {
-    socketRef.current = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    })
-
-    socketRef.current.on('connect', () => {
-      setIsConnected(true)
-      setError(null)
-    })
-
-    socketRef.current.on('disconnect', () => {
-      setIsConnected(false)
-    })
-
-    socketRef.current.on('connect_error', (err) => {
-      setError(err.message)
-    })
-
-    socketRef.current.on('token', (data) => {
-      if (!accumRef.current[data.messageId]) {
-        accumRef.current[data.messageId] = ''
-      }
-      accumRef.current[data.messageId] += data.content
-      updateMessage(data.messageId, { content: accumRef.current[data.messageId], streaming: true })
-    })
-
-    socketRef.current.on('message_complete', (data) => {
-      const finalContent = accumRef.current[data.messageId] || data.fullContent || data.content || ''
-      updateMessage(data.messageId, { streaming: false, content: finalContent })
-      delete accumRef.current[data.messageId]
-      setStreaming(false)
-    })
-
-    socketRef.current.on('tool_call', (data) => {
-      addToolCall({
-        id: data.callId,
-        name: data.name,
-        arguments: data.arguments,
-        status: 'pending',
-      })
-    })
-
-    socketRef.current.on('tool_result', (data) => {
-      updateToolCall(data.callId, { status: 'completed', result: data.result })
-    })
-
-    socketRef.current.on('error', (data) => {
-      setError(data.message)
-      setStreaming(false)
-    })
-
     return () => {
-      socketRef.current?.disconnect()
+      abortRef.current?.abort()
     }
-  }, [addMessage, updateMessage, setStreaming, addToolCall, updateToolCall])
+  }, [])
 
   const sendMessage = useCallback(async (content, attachments = []) => {
-    if (!socketRef.current?.connected) {
-      setError('Not connected to server')
-      return
-    }
-
     const userMessageId = crypto.randomUUID()
     addMessage({
       id: userMessageId,
@@ -98,13 +36,58 @@ export function useAgentStream() {
     setStreaming(true)
     clearToolCalls()
 
-    socketRef.current.emit('chat', {
-      messageId: assistantMessageId,
-      content,
-      model: selectedModel,
-      history: useChatStore.getState().messages.slice(-20),
-    })
-  }, [addMessage, setStreaming, clearToolCalls, selectedModel])
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+
+    try {
+      setError(null)
+      setIsConnected(true)
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        signal: abortRef.current.signal,
+        body: JSON.stringify({
+          content,
+          model: selectedModel,
+          history: useChatStore.getState().messages.slice(-20),
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Chat request failed')
+      }
+
+      data.toolCalls?.forEach((toolCall) => {
+        addToolCall({
+          id: toolCall.id,
+          name: toolCall.name,
+          arguments: JSON.stringify(toolCall.arguments || {}),
+          status: 'pending',
+        })
+        updateToolCall(toolCall.id, {
+          status: 'completed',
+          result: JSON.stringify(toolCall.result || {}),
+        })
+      })
+
+      updateMessage(assistantMessageId, {
+        content: data.fullContent || data.content || '',
+        streaming: false,
+      })
+    } catch (err) {
+      if (err.name === 'AbortError') return
+      setIsConnected(false)
+      setError(err.message)
+      updateMessage(assistantMessageId, {
+        content: `Error: ${err.message}`,
+        streaming: false,
+      })
+    } finally {
+      setStreaming(false)
+    }
+  }, [addMessage, updateMessage, setStreaming, addToolCall, updateToolCall, clearToolCalls, selectedModel])
 
   return {
     isConnected,

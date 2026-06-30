@@ -8,7 +8,7 @@ export default function AuthModal({ onClose }) {
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [authError, setAuthError] = useState(null)
-  const { loginWithGoogle, loginWithEmail, registerWithEmail } = useAuth()
+  const { loginWithGoogle, loginWithEmail, registerWithEmail, firebaseReady } = useAuth()
 
   const handleGoogle = async () => {
     setSubmitting(true)
@@ -59,6 +59,14 @@ export default function AuthModal({ onClose }) {
           </p>
         </div>
 
+        {!firebaseReady && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-2.5 mb-4">
+            <p className="text-xs text-yellow-400">
+              Authentication is not configured. Set valid Firebase environment variables in the Netlify dashboard (Site settings → Environment variables).
+            </p>
+          </div>
+        )}
+
         {authError && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5 mb-4 animate-slide-up">
             <p className="text-xs text-red-400">{authError}</p>
@@ -67,7 +75,7 @@ export default function AuthModal({ onClose }) {
 
         <button
           onClick={handleGoogle}
-          disabled={submitting}
+          disabled={submitting || !firebaseReady}
           className="w-full flex items-center justify-center gap-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl px-4 py-3 text-sm font-medium transition-all disabled:opacity-50 mb-4 border border-white/10 hover:border-white/20"
         >
           {submitting ? <Spinner size={16} className="animate-spin" /> : <Google size={16} />}
@@ -100,7 +108,7 @@ export default function AuthModal({ onClose }) {
           />
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !firebaseReady}
             className="w-full bg-accent text-bg-deep font-semibold rounded-xl px-4 py-2.5 text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-accent/20"
           >
             {submitting && <Spinner size={14} className="animate-spin" />}
