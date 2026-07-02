@@ -24,7 +24,7 @@ function makeProvider(clientClass, apiKey, baseURL, model, supportsTools = true)
   }
 }
 
-const defaultProvider = 'gpt-4o-mini'
+const defaultProvider = 'llama-3.3'
 
 let _providers = null
 

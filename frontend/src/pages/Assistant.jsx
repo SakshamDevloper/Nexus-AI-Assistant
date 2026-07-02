@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Microphone, MicrophoneSlash, PaperPlane, Bars, Brain, RightFromBracket, User, Robot, Copy, Check, Sun, Moon, Plus } from '../icons'
+import { Microphone, MicrophoneSlash, PaperPlane, Bars, Brain, RightFromBracket, User, Robot, Copy, Check, Sun, Moon, Plus, ChevronRight, CircleStop, PenToSquare, TrashCan, ImageIcon, FileIcon, FolderIcon, Sparkles } from '../icons'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import VoiceOrb from '../components/VoiceOrb/VoiceOrb'
+import VoiceStrands from '../components/VoiceOrb/VoiceStrands'
 import ModelSelector from '../components/ModelSelector/ModelSelector'
-
 import MemoryPanel from '../components/MemoryPanel/MemoryPanel'
 import AuthModal from '../components/Auth/AuthModal'
 import { useChatStore } from '../stores/chatStore'
@@ -17,52 +16,9 @@ import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 
 import StaggeredMenu from '../components/ReactBits/StaggeredMenu'
-import GooeyNav from '../components/ReactBits/GooeyNav'
 import MagicRings from '../components/ReactBits/MagicRings'
 
 
-
-/* ---------- Voice Wave Grid Overlay ---------- */
-function VoiceWaveGrid({ state, accent = '#5ed29c' }) {
-  const active = state === 'listening' || state === 'speaking'
-
-  return (
-    <>
-      <div className="fixed inset-0 z-[5] pointer-events-none overflow-hidden">
-        <div className="absolute inset-0" style={{
-          backgroundImage: [
-            `linear-gradient(to right, ${accent}18 1px, transparent 1px)`,
-            `linear-gradient(to bottom, ${accent}18 1px, transparent 1px)`,
-          ].join(', '),
-          backgroundSize: '48px 48px',
-          opacity: 0.06,
-        }} />
-      </div>
-      {active && (
-        <div className="fixed inset-0 z-[6] pointer-events-none overflow-hidden">
-          <style>{`
-            @keyframes wavePulse {
-              0%, 100% { opacity: 0.08; transform: scaleY(1); }
-              50% { opacity: 0.45; transform: scaleY(2.2); }
-            }
-          `}</style>
-          <div className="absolute inset-0 flex items-center justify-center">
-            {Array.from({ length: 11 }).map((_, i) => (
-              <div key={i} className="absolute left-0 right-0 h-[1px]" style={{
-                top: `${8 + i * 8}%`,
-                background: `linear-gradient(90deg, transparent 5%, ${accent}33 20%, ${accent}77 50%, ${accent}33 80%, transparent 95%)`,
-                animation: `wavePulse ${1.2 + i * 0.15}s ease-in-out infinite`,
-                animationDelay: `${i * 0.12}s`,
-                boxShadow: state === 'listening' ? `0 0 6px ${accent}55, 0 0 20px ${accent}22` : `0 0 4px ${accent}44`,
-                filter: 'blur(0.5px)',
-              }} />
-            ))}
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
 
 /* ---------- Code Block ---------- */
 function CodeBlock({ language, children }) {
@@ -87,20 +43,72 @@ function CodeBlock({ language, children }) {
   )
 }
 
+/* ---------- Tool Call Row ---------- */
+function ToolCallRow({ toolCall }) {
+  const [expanded, setExpanded] = useState(false)
+  const isRunning = toolCall.status === 'running' || toolCall.status === 'pending'
+
+  return (
+    <div className="group/tc mb-1 last:mb-0">
+      <div className="flex items-center gap-2 text-xs text-text-muted bg-white/[0.03] px-2.5 py-1.5 rounded-lg font-mono transition-colors">
+        {isRunning ? (
+          <div className="w-3.5 h-3.5 relative flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full border border-accent border-t-transparent animate-spin" />
+          </div>
+        ) : (
+          <span className="text-accent text-[10px]">&#10003;</span>
+        )}
+        <span className="text-accent/80 font-medium">{toolCall.name}</span>
+        <span className="text-white/15 truncate max-w-[140px]">{toolCall.arguments}</span>
+        <button onClick={() => setExpanded(!expanded)} className="ml-auto text-white/10 hover:text-white/40 transition-colors text-[10px]">
+          {expanded ? 'less' : 'more'}
+        </button>
+      </div>
+      {expanded && toolCall.result && (
+        <div className="mt-1 ml-4 p-2 bg-white/[0.02] border border-white/[0.04] rounded-lg">
+          <pre className="text-[10px] text-text-muted font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">{toolCall.result}</pre>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ---------- Message Bubble ---------- */
-function MessageBubble({ message }) {
+function MessageBubble({ message, onEdit, onDelete, onSpeak }) {
+  const [copied, setCopied] = useState(false)
+  const [showActions, setShowActions] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState('')
   const isUser = message.role === 'user'
   const hasToolCalls = message.toolCalls?.length > 0
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleEditStart = () => {
+    setEditText(message.content)
+    setEditing(true)
+  }
+
+  const handleEditSubmit = () => {
+    onEdit?.(message.id, editText)
+    setEditing(false)
+  }
+
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div className={`group/message flex gap-3 ${isUser ? 'flex-row-reverse' : ''} animate-slide-up`}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}>
       <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-        isUser ? 'bg-accent/20 ring-1 ring-accent/20' : 'bg-accent/10 ring-1 ring-accent/10'
+        isUser ? 'bg-accent/20 ring-1 ring-accent/20' : 'bg-white/[0.06] ring-1 ring-white/[0.08]'
       }`}>
-        {isUser ? <User size={12} className="text-accent" /> : <Robot size={12} className="text-accent" />}
+        {isUser ? <User size={12} className="text-accent" /> : <span className="text-xs font-bold text-accent/80">N</span>}
       </div>
       <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%]`}>
-        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+        <div className={`relative px-4 py-2.5 rounded-2xl text-sm leading-relaxed transition-colors ${
           isUser
             ? 'bg-accent/15 text-white/90 rounded-tr-md'
             : 'bg-white/[0.04] border border-white/[0.06] text-white/80 rounded-tl-md'
@@ -108,23 +116,33 @@ function MessageBubble({ message }) {
           {hasToolCalls && (
             <div className="mb-2 space-y-1">
               {message.toolCalls.map((tc) => (
-                <div key={tc.id} className="flex items-center gap-2 text-xs text-text-muted bg-white/[0.03] px-2.5 py-1.5 rounded-lg font-mono">
-                  <span className="text-accent">&#9667;</span>
-                  <span>{tc.name}</span>
-                  <span className="text-white/15 truncate max-w-[120px]">{tc.arguments}</span>
-                </div>
+                <ToolCallRow key={tc.id} toolCall={tc} />
               ))}
             </div>
           )}
-          {isUser ? (
+
+          {editing ? (
+            <div className="flex flex-col gap-2">
+              <textarea value={editText} onChange={(e) => setEditText(e.target.value)}
+                className="w-full bg-white/[0.06] border border-white/[0.1] rounded-lg p-2 text-sm text-white resize-none focus:outline-none focus:border-accent/50"
+                rows={3} autoFocus />
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setEditing(false)} className="text-xs text-white/40 hover:text-white/70 px-2 py-1 rounded transition-colors">Cancel</button>
+                <button onClick={handleEditSubmit} className="text-xs text-accent hover:text-accent/80 px-2 py-1 rounded bg-accent/10 transition-colors">Save</button>
+              </div>
+            </div>
+          ) : isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
             <div className="prose prose-sm prose-invert">
               {message.streaming && !message.content ? (
-                <div className="flex gap-1 py-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent/60" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent/60" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent/60" />
+                <div className="flex items-center gap-2 py-2">
+                  <div className="flex gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent/60 typing-dot" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent/60 typing-dot" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent/60 typing-dot" />
+                  </div>
+                  <span className="text-[11px] text-accent/40 font-mono animate-fade-in">Thinking...</span>
                 </div>
               ) : (
                 <ReactMarkdown components={{
@@ -141,47 +159,102 @@ function MessageBubble({ message }) {
                 </ReactMarkdown>
               )}
               {message.streaming && message.content && (
-                <span className="inline-block w-1.5 h-1.5 bg-accent rounded-full ml-0.5" />
+                <span className="inline-block w-1.5 h-1.5 bg-accent rounded-full ml-0.5 typing-dot" style={{ animationDelay: '0s' }} />
               )}
             </div>
           )}
         </div>
+
+        {/* Actions row — always visible buttons */}
+        {!editing && !message.streaming && (
+          <div className={`flex gap-1 mt-1 ${isUser ? 'flex-row-reverse' : ''}`}>
+            <button onClick={handleCopy}
+              className="p-1 rounded text-white/15 hover:text-white/60 hover:bg-white/[0.04] transition-all">
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+            </button>
+            {isUser && (
+              <button onClick={handleEditStart}
+                className="p-1 rounded text-white/15 hover:text-white/60 hover:bg-white/[0.04] transition-all">
+                <PenToSquare size={12} />
+              </button>
+            )}
+            {!isUser && (
+              <button onClick={() => onSpeak?.(message.content)}
+                className="p-1 rounded text-white/15 hover:text-accent hover:bg-white/[0.04] transition-all"
+                title="Read aloud">
+                <Microphone size={12} />
+              </button>
+            )}
+            <button onClick={() => onDelete?.(message.id)}
+              className="p-1 rounded text-white/15 hover:text-red-400 hover:bg-white/[0.04] transition-all">
+              <TrashCan size={12} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
+const SUGGESTIONS = [
+  { title: 'Explore topics', desc: 'Ask me about science, tech, or history' },
+  { title: 'Write something', desc: 'Draft an email, essay, or creative piece' },
+  { title: 'Analyze data', desc: 'Upload a file or describe a dataset' },
+  { title: 'Debug code', desc: 'Paste code and I\'ll find the issue' },
+]
+
 /* ---------- Chat Interface ---------- */
-function ChatInterface() {
-  const { messages, isStreaming, pendingToolCalls } = useChatStore()
+function ChatInterface({ onSendMessage, onSpeakMessage }) {
+  const { messages, isStreaming, pendingToolCalls, updateMessage, removeMessage } = useChatStore()
   const bottomRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, pendingToolCalls])
 
+  const handleSuggestion = (text) => {
+    onSendMessage?.(text)
+  }
+
+  const handleEdit = (id, newText) => {
+    updateMessage(id, { content: newText })
+  }
+
+  const handleDelete = (id) => {
+    removeMessage(id)
+  }
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth">
       {messages.length === 0 && !isStreaming && (
-        <div className="flex flex-col items-center justify-center h-full text-center py-16">
-          <p className="text-sm text-text-muted max-w-xs leading-relaxed">
-            Type a message or click the mic to start speaking with NexusAI.
+        <div className="flex flex-col items-center justify-center h-full text-center py-8">
+          <div className="mb-6">
+            <img src="/brand/logo.svg" alt="NexusAI" className="w-14 h-14 mx-auto opacity-60 neon-logo" />
+          </div>
+          <h1 className="text-xl font-bold text-white/80 mb-1">What can I help with?</h1>
+          <p className="text-sm text-text-muted mb-8 max-w-md">
+            Ask anything — research, write, analyze, or code. I'm here to help.
           </p>
-          <div className="flex gap-2 mt-6">
-            {['Ask anything', 'Search the web', 'Check weather'].map((hint) => (
-              <span key={hint} className="text-xs text-white/20 bg-white/[0.03] px-3 py-1.5 rounded-full border border-white/[0.06]">
-                {hint}
-              </span>
+          <div className="grid grid-cols-2 gap-3 max-w-lg w-full px-4">
+            {SUGGESTIONS.map((s) => (
+                <button key={s.title} onClick={() => handleSuggestion(s.title)}
+                className="group flex flex-col items-start gap-1 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-accent/20 transition-all text-left card-hover">
+                <span className="text-sm font-medium text-white/70 group-hover:text-white/90 transition-colors">{s.title}</span>
+                <span className="text-[11px] text-text-muted leading-tight">{s.desc}</span>
+              </button>
             ))}
           </div>
         </div>
       )}
 
       {messages.map((msg, i) => (
-        <MessageBubble key={msg.id} message={msg} />
+        <MessageBubble key={msg.id} message={msg}
+          onEdit={msg.role === 'user' ? handleEdit : undefined}
+          onDelete={handleDelete}
+          onSpeak={msg.role === 'assistant' ? onSpeakMessage : undefined} />
       ))}
 
-      {pendingToolCalls.length > 0 && (
+      {pendingToolCalls.length > 0 && !pendingToolCalls.some(tc => tc.status === 'completed') && (
         <div className="flex items-center gap-2 px-4 py-1">
           <div className="flex items-center gap-2 bg-white/[0.03] rounded-full px-3 py-1.5 border border-white/[0.06]">
             <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
@@ -202,24 +275,34 @@ export default function Assistant() {
   const [input, setInput] = useState('')
   const [memoryOpen, setMemoryOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [orbState, setOrbState] = useState('idle')
   const [showUpload, setShowUpload] = useState(false)
+  const [filePreviews, setFilePreviews] = useState([])
   const inputRef = useRef(null)
   const fileRef = useRef(null)
+  const folderRef = useRef(null)
 
   const { messages, isStreaming, sessions, loadSession, newSession, saveSession } = useChatStore()
   const { voiceEnabled, autoSpeak, voiceSpeed, voicePitch, theme, toggleTheme } = useSettingsStore()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  const { isConnected, sendMessage } = useAgentStream()
+  const { isConnected, sendMessage, stopGeneration } = useAgentStream()
+  const voiceModeRef = useRef(false)
+
   const speechRec = useSpeechRecognition({
     continuous: false,
     interimResults: true,
     language: 'en-US',
     onResult: (text, isFinal) => {
-      if (isFinal) setInput(prev => prev + text)
+      if (isFinal) {
+        setInput(prev => prev + text)
+        voiceModeRef.current = true
+        saveSession()
+        sendMessage(text)
+      }
     },
     onStart: () => setOrbState('listening'),
     onEnd: () => setOrbState(isStreaming ? 'thinking' : 'idle'),
@@ -233,7 +316,8 @@ export default function Assistant() {
   }, [isStreaming, speechRec.isListening])
 
   useEffect(() => {
-    if (autoSpeak && messages.length > 0 && !isStreaming) {
+    if (!voiceModeRef.current) return
+    if (messages.length > 0 && !isStreaming) {
       const lastMsg = messages[messages.length - 1]
       if (lastMsg.role === 'assistant' && lastMsg.content && !lastMsg.spoken) {
         setOrbState('speaking')
@@ -243,17 +327,19 @@ export default function Assistant() {
           onEnd: () => {
             setOrbState('idle')
             useChatStore.getState().updateMessage(lastMsg.id, { spoken: true })
+            voiceModeRef.current = false
           },
         })
       }
     }
-  }, [messages, isStreaming, autoSpeak, voiceSpeed, voicePitch])
+  }, [messages, isStreaming, voiceSpeed, voicePitch])
 
   const handleSend = useCallback(() => {
     if (!input.trim() || isStreaming) return
     saveSession()
     sendMessage(input.trim())
     setInput('')
+    setFilePreviews([])
     inputRef.current?.focus()
   }, [input, isStreaming, saveSession, sendMessage])
 
@@ -272,14 +358,45 @@ export default function Assistant() {
   const handleFileSelect = (e) => {
     const files = e.target.files
     if (files?.length) {
-      // File selection handled here — show name as preview
-      setInput(prev => prev + ` [${files[0].name}]`)
+      const previews = Array.from(files).slice(0, 5).map(f => ({ name: f.name, size: f.size, type: f.type }))
+      setFilePreviews(prev => [...prev, ...previews])
       setShowUpload(false)
     }
     e.target.value = ''
   }
 
-  const showOrbOverlay = speechRec.isListening || orbState === 'speaking'
+  const handleFolderSelect = (e) => {
+    const files = e.target.files
+    if (files?.length) {
+      const folderName = files[0].webkitRelativePath.split('/')[0]
+      setFilePreviews(prev => [...prev, { name: folderName + '/', size: files.length, type: 'folder' }])
+      setShowUpload(false)
+    }
+    e.target.value = ''
+  }
+
+  const triggerUpload = (type) => {
+    setShowUpload(false)
+    if (type === 'folder') {
+      const el = folderRef.current
+      if (el) {
+        el.setAttribute('directory', '')
+        el.setAttribute('webkitdirectory', '')
+        el.removeAttribute('accept')
+        el.click()
+      }
+    } else {
+      const el = fileRef.current
+      if (el) {
+        el.accept = type === 'photo' ? 'image/*' : '*/*'
+        el.removeAttribute('directory')
+        el.removeAttribute('webkitdirectory')
+        el.click()
+      }
+    }
+  }
+
+  const showOrbOverlay = speechRec.isListening
 
   return (
     <div className="h-screen flex flex-col bg-bg-deep text-text-primary relative overflow-hidden">
@@ -290,6 +407,7 @@ export default function Assistant() {
         items={[
           { label: 'Home', ariaLabel: 'Go to home page', link: '/' },
           { label: 'History', ariaLabel: 'View conversation history', link: '/history' },
+          ...(!user ? [{ label: 'Sign In', ariaLabel: 'Sign in to your account', onClick: () => setAuthOpen(true) }] : []),
         ]}
         accentColor="#5ed29c"
         colors={['#0a0f0e', '#0d1412', '#111a17']}
@@ -300,36 +418,9 @@ export default function Assistant() {
         displayItemNumbering={true}
       />
 
-      {/* Fixed top-left branding */}
-      <div className="fixed top-3 left-3 z-50 flex items-center gap-2 pointer-events-none">
-        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center">
-          <span className="text-[10px] font-black text-black">N</span>
-        </div>
-        <span className="text-xs font-display font-semibold text-white/40">NexusAI</span>
-      </div>
-
       {/* Decorative background elements */}
       <div className="fixed -right-40 top-1/3 w-[500px] h-[500px] opacity-15 pointer-events-none z-0">
         <MagicRings ringCount={6} baseRadius={0.3} radiusStep={0.12} lineThickness={0.015} color="#5ed29c" colorTwo="#6366f1" opacity={0.3} rotation={0.2} />
-      </div>
-
-      {/* Voice Wave Grid */}
-      <VoiceWaveGrid state={orbState} />
-
-      {/* Floating controls */}
-      <div className="fixed top-3 right-3 z-50 flex items-center gap-1.5 md:hidden">
-        <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/[0.06] transition-all">
-          <Bars size={15} />
-        </button>
-      </div>
-      <div className="fixed top-3 right-3 z-50 hidden md:flex items-center gap-1.5">
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/[0.06] transition-all"
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
-        </button>
       </div>
 
       {/* Mobile sidebar overlay */}
@@ -337,17 +428,18 @@ export default function Assistant() {
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-72 bg-surface-95 backdrop-blur-xl p-4 border-r border-border-color flex flex-col">
-            <div className="mb-6">
-              <GooeyNav items={[
-                { label: user?.displayName || user?.email || 'Sign In', href: '#', icon: <User size={15} /> },
-                { label: 'New Chat', href: '#', icon: <span className="text-lg leading-none">+</span> },
-                { label: 'Memory', href: '#', icon: <Brain size={15} /> },
-              ]} animationTime={500} particleCount={10} particleDistances={[60, 8]} particleR={80} timeVariance={200} initialActiveIndex={0}
-                onItemClick={(i) => {
-                  if (i === 0 && !user) setAuthOpen(true)
-                  if (i === 1) { newSession(); setSidebarOpen(false) }
-                  if (i === 2) { setMemoryOpen(true); setSidebarOpen(false) }
-                }} />
+            <div className="flex items-center justify-center mb-6 pt-2">
+              <img src="/brand/logo.svg" alt="NexusAI" className="w-11 h-11 rounded-xl" />
+            </div>
+            <div className="flex flex-col gap-1.5 mb-6">
+              <button onClick={() => { newSession(); setSidebarOpen(false) }}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-all w-full text-left">
+                <span className="text-lg leading-none text-accent">+</span> New Chat
+              </button>
+              <button onClick={() => { setMemoryOpen(true); setSidebarOpen(false) }}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-all w-full text-left">
+                <Brain size={15} className="text-accent" /> Memory
+              </button>
             </div>
             {user && (
               <button onClick={logout} className="mt-auto flex items-center gap-2 px-3 py-2 text-xs text-white/20 hover:text-red-400 transition-colors">
@@ -361,49 +453,95 @@ export default function Assistant() {
       {/* Main layout */}
       <div className="flex-1 flex min-h-0 relative z-10">
         {/* Sidebar desktop */}
-        <div className="hidden md:flex w-72 flex-col bg-surface-80 backdrop-blur-xl border-r border-border-color relative z-20 p-4">
-          <div className="mb-6">
-            <GooeyNav items={[
-              { label: user?.displayName || user?.email || 'Sign In', href: '#', icon: <User size={15} /> },
-              { label: 'New Chat', href: '#', icon: <span className="text-lg leading-none">+</span> },
-              { label: 'Memory', href: '#', icon: <Brain size={15} /> },
-            ]} animationTime={500} particleCount={10} particleDistances={[60, 8]} particleR={80} timeVariance={200} initialActiveIndex={0}
-              onItemClick={(i) => {
-                if (i === 0 && !user) setAuthOpen(true)
-                if (i === 1) newSession()
-                if (i === 2) setMemoryOpen(true)
-              }} />
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-0.5 mb-4 custom-scrollbar">
-            {sessions.length === 0 && (
-              <p className="text-xs text-white/15 text-center py-6">No history yet</p>
-            )}
-            {sessions.slice(0, 20).map((session) => (
-              <button key={session.id} onClick={() => loadSession(session.id)}
-                className="w-full text-left px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.03] transition-all truncate">
-                {session.title || 'New Chat'}
-              </button>
-            ))}
-          </div>
-          {user && (
-            <button onClick={logout} className="flex items-center gap-2 px-3 py-2 text-xs text-white/20 hover:text-red-400 transition-colors">
-              <RightFromBracket size={12} /> Logout
-            </button>
+        <div className={`hidden md:flex flex-col bg-surface-80 backdrop-blur-xl border-r border-border-color relative z-20 p-4 transition-all duration-300 ${sidebarCollapsed ? 'w-0 p-0 overflow-hidden border-none' : 'w-72'}`}>
+          {!sidebarCollapsed && (
+            <>
+              <div className="flex items-center justify-center mb-6 pt-1">
+                <img src="/brand/logo.svg" alt="NexusAI" className="w-11 h-11 rounded-xl" />
+              </div>
+              <div className="flex flex-col gap-1.5 mb-6">
+                <button onClick={() => newSession()}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-all w-full text-left">
+                  <span className="text-lg leading-none text-accent">+</span> New Chat
+                </button>
+                <button onClick={() => setMemoryOpen(true)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-all w-full text-left">
+                  <Brain size={15} className="text-accent" /> Memory
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto space-y-0.5 mb-4 custom-scrollbar">
+                {sessions.length === 0 && (
+                  <p className="text-xs text-white/15 text-center py-6">No history yet</p>
+                )}
+                {sessions.slice(0, 20).map((session) => (
+                  <button key={session.id} onClick={() => loadSession(session.id)}
+                    className="w-full text-left px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.03] transition-all truncate">
+                    {session.title || 'New Chat'}
+                  </button>
+                ))}
+              </div>
+              {user && (
+                <button onClick={logout} className="flex items-center gap-2 px-3 py-2 text-xs text-white/20 hover:text-red-400 transition-colors">
+                  <RightFromBracket size={12} /> Logout
+                </button>
+              )}
+            </>
           )}
         </div>
+        {/* Sidebar toggle button */}
+        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-30 w-5 h-10 items-center justify-center bg-surface-80 backdrop-blur-xl border border-border-color rounded-r-lg text-white/20 hover:text-accent hover:bg-surface-95 transition-all cursor-pointer"
+          style={{ marginLeft: sidebarCollapsed ? '0' : '17.5rem' }}>
+          <ChevronRight size={10} className={`transition-transform duration-300 ${sidebarCollapsed ? '' : 'rotate-180'}`} />
+        </button>
 
         {/* Main chat area */}
-        <div className="flex-1 flex flex-col min-w-0 relative z-20">
+        <div className="flex-1 flex flex-col min-w-0 relative z-20 pt-16">
           {/* Chat messages */}
-          <div className="flex-1 relative">
-            <ChatInterface />
+          <div className="flex-1 min-h-0 relative">
+            <ChatInterface onSendMessage={(text) => { saveSession(); sendMessage(text); setInput(''); setFilePreviews([]) }}
+              onSpeakMessage={(text) => {
+                synth.speak(text, { rate: voiceSpeed, pitch: voicePitch })
+              }} />
+          </div>
+
+          {/* Voice animation between chat and input */}
+          {showOrbOverlay && (
+            <div className="flex justify-center py-2">
+              <VoiceStrands state={orbState} />
+            </div>
+          )}
+
+          {/* Hidden ModelSelector for plus button trigger */}
+          <div className="hidden">
+            <ModelSelector />
           </div>
 
           {/* Input area — ChatGPT style */}
           <div className="px-3 pb-3 pt-2 relative z-30">
             <div className="max-w-3xl mx-auto">
+              {/* File preview chips */}
+              {filePreviews.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2 px-1">
+                  {filePreviews.map((fp, i) => (
+                    <div key={i} className="flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg px-2.5 py-1"
+                      title={fp.type === 'folder' ? `${fp.name} (${fp.size} files)` : `${fp.name} (${(fp.size / 1024).toFixed(1)} KB)`}>
+                      <span className="text-[10px]">{fp.type === 'folder' ? '&#128193;' : fp.type.startsWith('image') ? '&#128247;' : '&#128196;'}</span>
+                      <span className="text-[11px] text-white/60 truncate max-w-[100px]">{fp.name}</span>
+                      <button onClick={() => setFilePreviews(prev => prev.filter((_, j) => j !== i))}
+                        className="text-white/20 hover:text-white/60 transition-colors ml-0.5">
+                        <span className="text-[10px]">&#10005;</span>
+                      </button>
+                    </div>
+                  ))}
+                  {filePreviews.length > 5 && (
+                    <span className="text-[11px] text-text-muted self-center">+{filePreviews.length - 5} more</span>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-end gap-1.5 bg-white/[0.04] border border-white/[0.08] rounded-2xl p-1.5 focus-within:border-white/[0.15] transition-all">
-                {/* + Upload button */}
+                {/* + Upload/Agent button */}
                 <div className="relative">
                   <button onClick={() => setShowUpload(!showUpload)}
                     className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-white/[0.06] transition-all">
@@ -412,19 +550,29 @@ export default function Assistant() {
                   {showUpload && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setShowUpload(false)} />
-                      <div className="absolute bottom-full left-0 mb-2 z-20 bg-surface-95 backdrop-blur-xl border border-border-color rounded-xl p-1.5 shadow-lg min-w-[160px]">
-                        <button onClick={() => { fileRef.current?.click(); setShowUpload(false) }}
+                      <div className="absolute bottom-full left-0 mb-2 z-20 bg-surface-95 backdrop-blur-xl border border-border-color rounded-xl p-1.5 shadow-lg min-w-[180px] origin-bottom-left animate-slide-up">
+                        <button onClick={() => triggerUpload('file')}
                           className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] rounded-lg transition-all text-left">
-                          <span className="text-base">&#128206;</span> Image
+                          <FileIcon size={14} /> File
                         </button>
-                        <button onClick={() => { fileRef.current?.click(); setShowUpload(false) }}
+                        <button onClick={() => triggerUpload('photo')}
                           className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] rounded-lg transition-all text-left">
-                          <span className="text-base">&#128196;</span> Document
+                          <ImageIcon size={14} /> Photo
+                        </button>
+                        <button onClick={() => triggerUpload('folder')}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-white/[0.04] rounded-lg transition-all text-left">
+                          <FolderIcon size={14} /> Folder
+                        </button>
+                        <div className="border-t border-border-color my-1" />
+                        <button onClick={() => { setShowUpload(false); document.querySelector('[data-model-selector]')?.click() }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-accent hover:text-accent/80 hover:bg-white/[0.04] rounded-lg transition-all text-left font-medium">
+                          <Sparkles size={14} /> Switch Model
                         </button>
                       </div>
                     </>
                   )}
-                  <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx,.txt" className="hidden" onChange={handleFileSelect} />
+                  <input ref={fileRef} type="file" className="hidden" onChange={handleFileSelect} />
+                  <input ref={folderRef} type="file" className="hidden" onChange={handleFolderSelect} />
                 </div>
 
                 {/* Textarea */}
@@ -441,11 +589,6 @@ export default function Assistant() {
                   />
                 </div>
 
-                {/* Model selector inline */}
-                <div className="shrink-0">
-                  <ModelSelector />
-                </div>
-
                 {/* Mic */}
                 <button onClick={handleMicToggle}
                   className={`p-2 rounded-xl transition-all ${
@@ -454,11 +597,19 @@ export default function Assistant() {
                   {speechRec.isListening ? <MicrophoneSlash size={16} /> : <Microphone size={16} />}
                 </button>
 
-                {/* Send */}
-                <button onClick={handleSend} disabled={!input.trim() || isStreaming}
-                  className="p-2 rounded-xl bg-accent text-bg-deep hover:brightness-110 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
-                  <PaperPlane size={16} />
-                </button>
+                {/* Send / Stop */}
+                {isStreaming ? (
+                  <button onClick={stopGeneration}
+                    className="p-2 rounded-xl bg-white/10 text-white/80 hover:bg-white/20 border border-white/[0.12] transition-all"
+                    title="Stop generation">
+                    <CircleStop size={16} />
+                  </button>
+                ) : (
+                  <button onClick={handleSend} disabled={!input.trim()}
+                    className="p-2 rounded-xl bg-accent text-bg-deep hover:brightness-110 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                    <PaperPlane size={16} />
+                  </button>
+                )}
               </div>
 
               {/* Connection indicator */}
@@ -476,13 +627,6 @@ export default function Assistant() {
           </div>
         </div>
       </div>
-
-      {/* Voice Orb overlay */}
-      {showOrbOverlay && (
-        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50">
-          <VoiceOrb state={orbState} />
-        </div>
-      )}
 
       {memoryOpen && <MemoryPanel onClose={() => setMemoryOpen(false)} />}
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}

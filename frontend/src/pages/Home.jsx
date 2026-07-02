@@ -104,7 +104,7 @@ export default function Home() {
       <StaggeredMenu
         position="right"
         isFixed={true}
-        logoUrl="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%235ed29c'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='40' rx='10' fill='url(%23g)'/%3E%3Ctext x='20' y='26' text-anchor='middle' fill='%23000' font-size='20' font-weight='900' font-family='sans-serif'%3EN%3C/text%3E%3C/svg%3E"
+        logoUrl="/brand/logo.svg"
         items={[
           { label: 'Home', ariaLabel: 'Go to home page', link: '/' },
           { label: 'Features', ariaLabel: 'View features', link: '#features' },

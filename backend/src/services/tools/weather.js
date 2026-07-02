@@ -1,23 +1,26 @@
 import axios from 'axios'
 
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY
 const WEATHER_URL = 'https://api.openweathermap.org/data/2.5'
 
 export const weatherTool = {
-  name: 'get_weather',
-  description: 'Get current weather or forecast for a location',
-  parameters: {
-    type: 'object',
-    properties: {
-      location: { type: 'string', description: 'City name or coordinates (lat,lon)' },
-      units: { type: 'string', enum: ['metric', 'imperial'], default: 'metric' },
-      forecast: { type: 'boolean', default: false },
+  type: 'function',
+  function: {
+    name: 'get_weather',
+    description: 'Get current weather or forecast for a location',
+    parameters: {
+      type: 'object',
+      properties: {
+        location: { type: 'string', description: 'City name or coordinates (lat,lon)' },
+        units: { type: 'string', enum: ['metric', 'imperial'], default: 'metric' },
+        forecast: { type: 'boolean', default: false },
+      },
+      required: ['location'],
     },
-    required: ['location'],
   },
 }
 
 export async function executeWeather({ location, units = 'metric', forecast = false }) {
+  const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY
   if (!OPENWEATHER_API_KEY) {
     return { error: 'OpenWeather API key not configured' }
   }

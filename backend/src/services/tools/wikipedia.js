@@ -3,15 +3,18 @@ import axios from 'axios'
 const WIKI_URL = 'https://en.wikipedia.org/api/rest_v1'
 
 export const wikipediaTool = {
-  name: 'wikipedia_lookup',
-  description: 'Look up information on Wikipedia. Use for factual queries, definitions, history, biographies, etc.',
-  parameters: {
-    type: 'object',
-    properties: {
-      query: { type: 'string', description: 'Search term or article title' },
-      sentences: { type: 'number', default: 5 },
+  type: 'function',
+  function: {
+    name: 'wikipedia_lookup',
+    description: 'Look up information on Wikipedia. Use for factual queries, definitions, history, biographies, etc.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search term or article title' },
+        sentences: { type: 'number', default: 5 },
+      },
+      required: ['query'],
     },
-    required: ['query'],
   },
 }
 

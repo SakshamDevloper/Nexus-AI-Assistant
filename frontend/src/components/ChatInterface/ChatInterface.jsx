@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { Copy, Check, User, Robot } from '../../icons'
+import { Copy, Check, User } from '../../icons'
 import { useChatStore } from '../../stores/chatStore'
 
 function CodeBlock({ language, children }) {
@@ -49,7 +49,7 @@ function MessageBubble({ message }) {
       }`}>
         {isUser
           ? <User size={14} className="text-accent" />
-          : <Robot size={14} className="text-white/50" />
+          : <span className="text-xs font-bold text-white/60">N</span>
         }
       </div>
 
@@ -113,7 +113,7 @@ export default function ChatInterface() {
       {messages.length === 0 && !isStreaming && (
         <div className="flex flex-col items-center justify-center h-full text-center py-20 animate-fade-in">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center mb-5 ring-1 ring-accent/10 pulse-glow">
-            <Robot size={36} className="text-accent" />
+            <span className="text-2xl font-bold text-accent">N</span>
           </div>
           <h2 className="text-xl font-display font-bold text-white/80 mb-2">Start a conversation</h2>
           <p className="text-sm text-white/35 max-w-xs">

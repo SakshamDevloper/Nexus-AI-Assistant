@@ -89,9 +89,15 @@ export function useAgentStream() {
     }
   }, [addMessage, updateMessage, setStreaming, addToolCall, updateToolCall, clearToolCalls, selectedModel])
 
+  const stopGeneration = useCallback(() => {
+    abortRef.current?.abort()
+    setStreaming(false)
+  }, [setStreaming])
+
   return {
     isConnected,
     error,
     sendMessage,
+    stopGeneration,
   }
 }

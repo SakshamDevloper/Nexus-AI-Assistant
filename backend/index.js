@@ -57,6 +57,69 @@ app.get('/api/tools', (req, res) => {
   res.json(toolDefinitions)
 })
 
+app.post('/api/chat', async (req, res) => {
+  const { content, model, history } = req.body
+
+  if (!content) {
+    return res.status(400).json({ error: 'Message content is required' })
+  }
+
+  try {
+    const messages = [
+      {
+        role: 'system',
+        content: `You are NexusAI, a helpful AI assistant with access to tools.
+Current date: ${new Date().toISOString().split('T')[0]}.
+Use tools when you need real-time information, weather, or factual lookups.
+Be concise but thorough. Format code blocks with language tags.`,
+      },
+      ...(history || []).map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content },
+    ]
+
+    let currentMessages = [...messages]
+    let maxIterations = 3
+    let iteration = 0
+    let fullContent = ''
+    let allToolCalls = []
+
+    while (iteration < maxIterations) {
+      let toolCallsMade = false
+      let iterationContent = ''
+
+      await streamResponse(
+        model,
+        currentMessages,
+        toolDefinitions,
+        (token) => { iterationContent += token; fullContent += token },
+        async (callId, name, args) => {
+          toolCallsMade = true
+          const result = await executeTool(name, args)
+          allToolCalls.push({ id: callId, name, arguments: JSON.stringify(args), result: JSON.stringify(result) })
+          currentMessages.push({
+            role: 'assistant',
+            content: iterationContent || null,
+            tool_calls: [{ id: callId, type: 'function', function: { name, arguments: JSON.stringify(args) } }],
+          })
+          currentMessages.push({ role: 'tool', tool_call_id: callId, content: JSON.stringify(result) })
+        }
+      )
+
+      if (iterationContent && !toolCallsMade) {
+        currentMessages.push({ role: 'assistant', content: iterationContent })
+      }
+
+      if (!toolCallsMade) break
+      iteration++
+    }
+
+    res.json({ content: fullContent, fullContent, toolCalls: allToolCalls })
+  } catch (error) {
+    console.error('Chat error:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 app.use('/api/auth', authRoutes)
 app.use('/api/memory', memoryRoutes)
 

@@ -19,6 +19,7 @@ export default function ModelSelector() {
   return (
     <div className="relative">
       <button
+        data-model-selector
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 glass rounded-full px-3 py-1.5 text-sm hover:bg-white/10 transition-colors"
       >
@@ -32,7 +33,7 @@ export default function ModelSelector() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-64 z-50 glass-strong rounded-xl p-2 shadow-2xl">
+          <div className="absolute right-0 bottom-full mb-2 w-64 z-50 glass-strong rounded-xl p-2 shadow-2xl animate-slide-up origin-bottom-right">
             {availableModels.map((model) => {
               const Icon = modelIcons[model.id] || Robot
               return (

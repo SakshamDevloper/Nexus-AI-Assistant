@@ -31,6 +31,12 @@ import {
   faSun,
   faMoon,
   faPlus,
+  faCircleStop,
+  faPenToSquare,
+  faArrowUpFromBracket,
+  faImage,
+  faFolder,
+  faFile,
 } from '@fortawesome/free-solid-svg-icons'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 
@@ -72,3 +78,9 @@ export const BookOpen = icon(faBookOpen)
 export const Sun = icon(faSun)
 export const Moon = icon(faMoon)
 export const Plus = icon(faPlus)
+export const CircleStop = icon(faCircleStop)
+export const PenToSquare = icon(faPenToSquare)
+export const ArrowUpFromBracket = icon(faArrowUpFromBracket)
+export const ImageIcon = icon(faImage)
+export const FolderIcon = icon(faFolder)
+export const FileIcon = icon(faFile)

@@ -163,7 +163,7 @@ void main() {
 }
 `;
 
-const buildPalette = colors => {
+const buildPalette = (colors) => {
   const filled = colors && colors.length ? colors : ['#ffffff'];
   const padded = [];
   for (let i = 0; i < MAX_COLORS; i++) {
@@ -175,7 +175,7 @@ const buildPalette = colors => {
 };
 
 export default function Strands({
-  colors = ['#FF4242', '#7C3AED', '#06B6D4', '#EAB308'],
+  colors = ['#5ed29c', '#6366f1', '#06B6D4', '#5ed29c'],
   count = 3,
   speed = 0.5,
   amplitude = 1,
@@ -196,26 +196,15 @@ export default function Strands({
   className = '',
   style
 }) {
-  const propsRef = useRef({});
+  const propsRef = useRef({
+    colors, count, speed, amplitude, waviness, thickness, glow, taper,
+    spread, hueShift, intensity, saturation, opacity, scale, glass,
+    refraction, dispersion, glassSize
+  });
   propsRef.current = {
-    colors,
-    count,
-    speed,
-    amplitude,
-    waviness,
-    thickness,
-    glow,
-    taper,
-    spread,
-    hueShift,
-    intensity,
-    saturation,
-    opacity,
-    scale,
-    glass,
-    refraction,
-    dispersion,
-    glassSize
+    colors, count, speed, amplitude, waviness, thickness, glow, taper,
+    spread, hueShift, intensity, saturation, opacity, scale, glass,
+    refraction, dispersion, glassSize
   };
 
   const ctnDom = useRef(null);
@@ -299,7 +288,7 @@ export default function Strands({
     resize();
 
     let animateId = 0;
-    const update = t => {
+    const update = (t) => {
       animateId = requestAnimationFrame(update);
       const current = propsRef.current;
       program.uniforms.uTime.value = t * 0.001;
