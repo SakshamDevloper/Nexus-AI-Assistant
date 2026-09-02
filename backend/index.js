@@ -12,6 +12,7 @@ import { toolDefinitions, executeTool } from './src/services/tools/index.js'
 import { cosineSimilarity, generateEmbeddingOpenAI, findSimilarMemories } from './src/utils/vectorStore.js'
 import authRoutes from './src/routes/auth.js'
 import memoryRoutes from './src/routes/memory.js'
+import fileRoutes from './src/routes/files.js'
 
 dotenv.config()
 
@@ -29,8 +30,9 @@ const io = new Server(httpServer, {
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }))
 app.use(express.json())
 
-// In-memory storage for vector memories (fallback when Qdrant not available)
-const vectorMemories = []
+app.use('/api/auth', authRoutes)
+app.use('/api/memory', memoryRoutes)
+app.use('/api/files', fileRoutes)
 
 function parsePrivateKey(raw) {
   if (!raw) return raw
@@ -138,6 +140,7 @@ Be concise but thorough. Format code blocks with language tags.`,
 
 app.use('/api/auth', authRoutes)
 app.use('/api/memory', memoryRoutes)
+app.use('/api/files', fileRoutes)
 
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`)
