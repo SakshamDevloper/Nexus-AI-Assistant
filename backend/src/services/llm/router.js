@@ -44,6 +44,26 @@ async function getProviders() {
   return _providers
 }
 
+export async function getProvider(modelId) {
+  const providers = await getProviders()
+  return providers[modelId]
+}
+
+export async function getModelStatus() {
+  const providers = await getProviders()
+  return Object.entries(providers || {}).map(([id, config]) => ({
+    id,
+    model: config?.model,
+    status: config !== null ? (Object.values(failureTracker[id] || {}).reduce((a, b) => a + b, 0) >= 5 ? 'disabled' : 'available') : 'not_configured',
+    failures: Object.values(failureTracker[id] || {}).reduce((a, b) => a + b, 0),
+    supportsTools: config?.supportsTools ?? false
+  }))
+}
+
+export function resetModelFailure(id) {
+  resetFailureTracker(id)
+}
+
 function trackFailure(modelId, errorType, errorMessage) {
   if (!failureTracker[modelId]) failureTracker[modelId] = {}
   failureTracker[modelId][errorType] = (failureTracker[modelId][errorType] || 0) + 1
