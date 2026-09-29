@@ -305,7 +305,7 @@ export default function Assistant() {
   const fileRef = useRef(null)
   const folderRef = useRef(null)
 
-  const { messages, isStreaming, sessions, loadSession, newSession, saveSession } = useChatStore()
+  const { messages, isStreaming, sessions, loadSession, newSession, saveSession, currentSessionId, setStreaming } = useChatStore()
   const { voiceEnabled, autoSpeak, voiceSpeed, voicePitch, theme, toggleTheme } = useSettingsStore()
   const { user, logout } = useAuth()
   const navigate = useNavigate()

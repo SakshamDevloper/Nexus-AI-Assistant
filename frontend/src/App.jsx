@@ -5,6 +5,7 @@ import History from './pages/History'
 import Voice from './pages/Voice'
 import Features from './pages/Features'
 import Partners from './pages/Partners'
+import Nexus from './pages/Nexus'
 import { AuthProvider } from './hooks/useAuth'
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/history" element={<History />} />
         <Route path="/features" element={<Features />} />
         <Route path="/partners" element={<Partners />} />
+        <Route path="/nexus" element={<Nexus />} />
       </Routes>
     </AuthProvider>
   )

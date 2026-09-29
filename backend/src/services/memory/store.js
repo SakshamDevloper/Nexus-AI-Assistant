@@ -50,7 +50,7 @@ class JsonCollection {
         if ('$gte' in val && !(doc[key] >= val.$gte)) return false
         if ('$lt' in val && !(doc[key] < val.$lt)) return false
         if ('$lte' in val && !(doc[key] <= val.$lte)) return false
-        if ('$regex' in val && !new RegExp(val.$regex, val.$options || '').test(String(doc[key] || ''))) continue
+        if ('$regex' in val && !new RegExp(val.$regex, val.$options || '').test(String(doc[key] || ''))) return false
         if ('$exists' in val) {
           if (val.$exists ? !(key in doc) : (key in doc)) return false
           continue

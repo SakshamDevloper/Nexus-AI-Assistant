@@ -4,9 +4,11 @@ import { Microphone, PaperPlane, ArrowRight, Brain } from '../icons'
 import StaggeredMenu from '../components/ReactBits/StaggeredMenu'
 import MagicRings from '../components/ReactBits/MagicRings'
 import { useAuth } from '../hooks/useAuth'
+import AuthModal from '../components/Auth/AuthModal'
 
 export default function Nexus() {
   const [activeTab, setActiveTab] = useState('voice')
+  const [authOpen, setAuthOpen] = useState(false)
   const navigate = useNavigate()
   const { user } = useAuth()
 
@@ -23,7 +25,7 @@ export default function Nexus() {
           { label: 'Home', ariaLabel: 'Go to home page', link: '/' },
           { label: 'Assistant', ariaLabel: 'Go to assistant chat', link: '/assistant' },
           { label: 'History', ariaLabel: 'View history', link: '/history' },
-          ...(!user ? [{ label: 'Sign In', ariaLabel: 'Sign in to your account', onClick: () => {} }] : []),
+          ...(!user ? [{ label: 'Sign In', ariaLabel: 'Sign in to your account', onClick: () => setAuthOpen(true) }] : []),
         ]}
         accentColor="#5ed29c"
         colors={['#0a0f0e', '#0d1412', '#111a17']}
@@ -100,6 +102,8 @@ export default function Nexus() {
           </div>
         </div>
       </div>
+
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     </div>
   )
 }

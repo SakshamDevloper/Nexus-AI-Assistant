@@ -1,6 +1,5 @@
 import { Router } from 'express'
-import { getProvider } from '../services/llm/router.js'
-import { toolDefinitions } from '../services/tools/index.js'
+import { getProvider, getProvidersMap } from '../services/llm/router.js'
 
 const router = Router()
 
@@ -22,7 +21,7 @@ async function queryModel(modelId, messages) {
 }
 
 async function generateConsensus(responses, originalQuery) {
-  const providers = (await import('../services/llm/router.js'))._providers || {}
+  const providers = getProvidersMap()
   const firstAvail = Object.values(providers).find(p => p !== null)
   if (!firstAvail) return ''
 

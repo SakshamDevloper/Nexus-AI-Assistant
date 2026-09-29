@@ -97,6 +97,7 @@ export function useAgentStream() {
       if (abortRef.current) return
       updateMessage(messageId, { content: data.fullContent || data.content || fullContent, streaming: false })
       setStreaming(false)
+      cleanup()
     }
 
     const onError = (data) => {
@@ -104,6 +105,15 @@ export function useAgentStream() {
       setError(data.message)
       updateMessage(messageId, { content: `Error: ${data.message}`, streaming: false })
       setStreaming(false)
+      cleanup()
+    }
+
+    const cleanup = () => {
+      socket.off('token', onToken)
+      socket.off('tool_call', onToolCall)
+      socket.off('tool_result', onToolResult)
+      socket.off('message_complete', onComplete)
+      socket.off('error', onError)
     }
 
     socket.on('token', onToken)
@@ -118,14 +128,6 @@ export function useAgentStream() {
       model: selectedModel,
       history: state.messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
     })
-
-    const cleanup = () => {
-      socket.off('token', onToken)
-      socket.off('tool_call', onToolCall)
-      socket.off('tool_result', onToolResult)
-      socket.off('message_complete', onComplete)
-      socket.off('error', onError)
-    }
 
     const checkInterval = setInterval(() => {
       if (!socket.connected || abortRef.current) {

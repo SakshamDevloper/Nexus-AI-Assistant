@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { FaRocket, FaBrain, FaBolt, FaShieldAlt, FaMicrochip, FaCogs, FaDatabase, FaCloud, FaLock, FaPalette, FaRobot, FaSearch, FaCode, FaCloudSun, FaHistory, FaExchangeAlt, FaHeadphones, FaGlobe, FaFileAlt, FaLayerGroup, FaNodeJs, FaPython, FaDocker, FaGitAlt, FaServer, FaMobileAlt, FaStar } from 'react-icons/fa'
 import { SiOpenai, SiGithub, SiReact, SiTailwindcss, SiMongodb, SiRedis, SiFirebase, SiSocketdotio, SiVite } from 'react-icons/si'
 import StaggeredMenu from '../components/ReactBits/StaggeredMenu'

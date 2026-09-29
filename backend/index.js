@@ -9,10 +9,12 @@ import { connectMongo, closeMongo } from './src/services/memory/mongo.js'
 import { connectRedis, closeRedis } from './src/services/memory/redis.js'
 import { streamResponse, initModels } from './src/services/llm/router.js'
 import { toolDefinitions, executeTool } from './src/services/tools/index.js'
-import { cosineSimilarity, generateEmbeddingOpenAI, findSimilarMemories } from './src/utils/vectorStore.js'
 import authRoutes from './src/routes/auth.js'
 import memoryRoutes from './src/routes/memory.js'
 import fileRoutes from './src/routes/files.js'
+import suggestionsRoutes from './src/routes/suggestions.js'
+import compareRoutes from './src/routes/compare.js'
+import branchesRoutes from './src/routes/branches.js'
 
 dotenv.config()
 
@@ -33,6 +35,9 @@ app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/memory', memoryRoutes)
 app.use('/api/files', fileRoutes)
+app.use('/api/suggestions', suggestionsRoutes)
+app.use('/api/compare', compareRoutes)
+app.use('/api/branches', branchesRoutes)
 
 function parsePrivateKey(raw) {
   if (!raw) return raw
@@ -131,16 +136,12 @@ Be concise but thorough. Format code blocks with language tags.`,
       iteration++
     }
 
-    res.json({ content: fullContent, fullContent, toolCalls: allToolCalls })
+    res.json({ content: fullContent, toolCalls: allToolCalls })
   } catch (error) {
     console.error('Chat error:', error)
     res.status(500).json({ error: error.message })
   }
 })
-
-app.use('/api/auth', authRoutes)
-app.use('/api/memory', memoryRoutes)
-app.use('/api/files', fileRoutes)
 
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`)
@@ -210,7 +211,7 @@ Be concise but thorough. Format code blocks with language tags.`,
         iteration++
       }
 
-      socket.emit('message_complete', { messageId, fullContent, content: fullContent })
+      socket.emit('message_complete', { messageId, content: fullContent })
     } catch (error) {
       console.error('Chat error:', error)
       socket.emit('error', { message: error.message })
@@ -236,8 +237,15 @@ process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down...')
   await closeMongo()
   await closeRedis()
-  httpServer.close()
-  process.exit(0)
+  httpServer.close(() => process.exit(0))
 })
 
-start()
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err)
+  res.status(500).json({ error: 'Internal server error' })
+})
+
+start().catch(err => {
+  console.error('Failed to start server:', err)
+  process.exit(1)
+})

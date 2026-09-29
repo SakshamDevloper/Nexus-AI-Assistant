@@ -49,6 +49,10 @@ export async function getProvider(modelId) {
   return providers[modelId]
 }
 
+export function getProvidersMap() {
+  return _providers || {}
+}
+
 export async function getModelStatus() {
   const providers = await getProviders()
   return Object.entries(providers || {}).map(([id, config]) => ({
@@ -183,7 +187,7 @@ export async function streamResponse(modelId, messages, tools, onToken, onToolCa
     for (const tc of toolCalls) {
       try {
         const args = JSON.parse(tc.arguments || '{}')
-        onToolCall(tc.id, tc.name, args)
+        await onToolCall(tc.id, tc.name, args)
       } catch (e) {
         console.error('Failed to parse tool call arguments:', e)
       }

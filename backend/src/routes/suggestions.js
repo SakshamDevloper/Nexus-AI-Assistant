@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getProvider } from '../services/llm/router.js'
+import { getProvidersMap } from '../services/llm/router.js'
 
 const router = Router()
 
@@ -10,7 +10,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const providers = (await import('../services/llm/router.js'))._providers || {}
+    const providers = getProvidersMap()
     const provider = Object.values(providers).find(p => p !== null)
     if (!provider) return res.json({ suggestions: [] })
 
